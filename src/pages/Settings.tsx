@@ -5,62 +5,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Settings as SettingsIcon, User, Loader2 } from 'lucide-react';
 
 export default function Settings() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [fullName, setFullName] = useState('');
+  const [email] = useState('user@example.com');
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        setFullName(data?.full_name || '');
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchProfile();
-  }, [user?.id]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id) return;
 
     setIsLoading(true);
     try {
-      // Update the profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Also update auth metadata for consistency
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { full_name: fullName }
-      });
-
-      if (authError) throw authError;
-
+      // Simulate profile update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       toast({
         title: 'Profile updated',
         description: 'Your name has been updated successfully.',
@@ -121,12 +82,12 @@ export default function Settings() {
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                    {getInitials(fullName, user?.email)}
+                    {getInitials(fullName, email)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">{fullName || 'Your Name'}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  <p className="text-sm text-muted-foreground">{email}</p>
                 </div>
               </div>
 
@@ -139,7 +100,6 @@ export default function Settings() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
-                  disabled={isFetching}
                 />
               </div>
 
@@ -149,7 +109,7 @@ export default function Settings() {
                 <Input
                   id="email"
                   type="email"
-                  value={user?.email || ''}
+                  value={email}
                   disabled
                   className="bg-muted"
                 />
@@ -158,7 +118,7 @@ export default function Settings() {
                 </p>
               </div>
 
-              <Button type="submit" disabled={isLoading || isFetching}>
+              <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>

@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
@@ -51,7 +50,6 @@ interface Submission {
 
 export default function AssessmentPage() {
   const { programId, lessonId } = useParams<{ programId: string; lessonId: string }>();
-  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -68,7 +66,7 @@ export default function AssessmentPage() {
     if (lessonId) {
       fetchAssessmentData();
     }
-  }, [lessonId, user]);
+  }, [lessonId]);
 
   const fetchAssessmentData = async () => {
     try {
@@ -91,21 +89,11 @@ export default function AssessmentPage() {
 
       setQuestions(questionsData || []);
 
-      // Check for previous submission
-      if (user) {
-        const { data: submissionData } = await supabase
-          .from('assessment_submissions')
-          .select('*')
-          .eq('assessment_id', assessmentData.id)
-          .eq('user_id', user.id)
-          .order('submitted_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (submissionData) {
-          setPreviousSubmission(submissionData as Submission);
-          setShowResults(true);
-        }
+      // Check for previous submission in localStorage
+      const storedSubmission = localStorage.getItem(`assessment-${assessmentData.id}`);
+      if (storedSubmission) {
+        setPreviousSubmission(JSON.parse(storedSubmission));
+        setShowResults(true);
       }
     } catch (error) {
       console.error('Error fetching assessment:', error);
@@ -122,7 +110,7 @@ export default function AssessmentPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user || !assessment) return;
+    if (!assessment) return;
 
     setIsSubmitting(true);
     try {
@@ -147,33 +135,20 @@ export default function AssessmentPage() {
 
       const hasEssay = questions.some((q) => q.question_type === 'essay');
 
-      const { data, error } = await supabase
-        .from('assessment_submissions')
-        .insert({
-          assessment_id: assessment.id,
-          user_id: user.id,
-          answers: answers,
-          score: hasEssay ? null : score,
-          feedback: null,
-        })
-        .select()
-        .single();
+      // Store submission in localStorage
+      const submission: Submission = {
+        id: crypto.randomUUID(),
+        score: hasEssay ? null : score,
+        feedback: null,
+        submitted_at: new Date().toISOString(),
+      };
+      
+      localStorage.setItem(`assessment-${assessment.id}`, JSON.stringify(submission));
 
-      if (error) throw error;
+      // Mark lesson as complete in localStorage
+      localStorage.setItem(`lesson-complete-${lessonId}`, 'true');
 
-      // Mark lesson as complete
-      await supabase
-        .from('lesson_progress')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lessonId,
-          completed: true,
-          completed_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,lesson_id',
-        });
-
-      setPreviousSubmission(data as Submission);
+      setPreviousSubmission(submission);
       setShowResults(true);
 
       toast({

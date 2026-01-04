@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle2,
@@ -47,7 +46,6 @@ interface QuizProgress {
 }
 
 export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockProps) {
-  const { user } = useAuth();
   const { toast } = useToast();
   const questions = content?.questions || [];
   
@@ -58,20 +56,11 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousResult, setPreviousResult] = useState<QuizProgress | null>(null);
 
-  // Check for previous quiz attempt stored in lesson_progress metadata
+  // Check for previous quiz attempt stored in localStorage
   useEffect(() => {
     const checkPreviousAttempt = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('lesson_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('lesson_id', lessonId)
-        .maybeSingle();
-
-      // Quiz progress is stored in a simple format in localStorage for now
-      const stored = localStorage.getItem(`quiz-${blockId}-${user.id}`);
+      // Quiz progress is stored in a simple format in localStorage
+      const stored = localStorage.getItem(`quiz-${blockId}`);
       if (stored) {
         const parsed = JSON.parse(stored) as QuizProgress;
         setPreviousResult(parsed);
@@ -83,7 +72,7 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
     };
     
     checkPreviousAttempt();
-  }, [user, blockId, lessonId]);
+  }, [blockId, lessonId]);
 
   if (questions.length === 0) {
     return (
@@ -116,15 +105,6 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
   };
 
   const handleSubmit = async () => {
-    if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Please log in',
-        description: 'You need to be logged in to submit the quiz.',
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     const { score: finalScore, maxScore: finalMax } = calculateScore();
     
@@ -141,36 +121,19 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
       maxScore: finalMax,
       completedAt: new Date().toISOString(),
     };
-    localStorage.setItem(`quiz-${blockId}-${user.id}`, JSON.stringify(quizProgress));
+    localStorage.setItem(`quiz-${blockId}`, JSON.stringify(quizProgress));
 
-    // Update lesson progress
-    try {
-      await supabase
-        .from('lesson_progress')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lessonId,
-          completed: true,
-          completed_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,lesson_id',
-        });
-
-      const percentage = Math.round((finalScore / finalMax) * 100);
-      toast({
-        title: 'Quiz submitted!',
-        description: `You scored ${finalScore}/${finalMax} (${percentage}%)`,
-      });
-    } catch (error) {
-      console.error('Error saving progress:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    const percentage = Math.round((finalScore / finalMax) * 100);
+    toast({
+      title: 'Quiz submitted!',
+      description: `You scored ${finalScore}/${finalMax} (${percentage}%)`,
+    });
+    
+    setIsSubmitting(false);
   };
 
   const handleRetry = () => {
-    if (!user) return;
-    localStorage.removeItem(`quiz-${blockId}-${user.id}`);
+    localStorage.removeItem(`quiz-${blockId}`);
     setAnswers({});
     setIsSubmitted(false);
     setScore(0);

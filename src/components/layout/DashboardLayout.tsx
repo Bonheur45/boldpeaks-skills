@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -19,7 +18,6 @@ import {
   Award,
   Users,
   Settings,
-  LogOut,
   Menu,
   GraduationCap,
   UserCog,
@@ -32,12 +30,12 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, userRole, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const isAdmin = userRole === 'admin';
+  // For now, default to student view - can be toggled via URL or state management later
+  const isAdmin = location.pathname.startsWith('/admin');
 
   const studentNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -55,11 +53,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   const navItems = isAdmin ? adminNavItems : studentNavItems;
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   const getInitials = (name?: string | null, email?: string) => {
     if (name) {
@@ -150,7 +143,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                      {getInitials(user?.user_metadata?.full_name, user?.email)}
+                      {getInitials('User', 'user@example.com')}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -158,9 +151,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span>{user?.user_metadata?.full_name || 'User'}</span>
+                    <span>User</span>
                     <span className="text-xs font-normal text-muted-foreground truncate">
-                      {user?.email}
+                      user@example.com
                     </span>
                   </div>
                 </DropdownMenuLabel>
@@ -170,11 +163,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -196,24 +184,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={undefined} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {getInitials(user?.user_metadata?.full_name, user?.email)}
+                        {getInitials('User', 'user@example.com')}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {user?.user_metadata?.full_name || 'User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="text-sm font-medium truncate">User</p>
+                      <p className="text-xs text-muted-foreground truncate">user@example.com</p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </Button>
                 </div>
               </SheetContent>
             </Sheet>

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
@@ -53,7 +52,6 @@ interface Grouping {
 
 export default function LessonViewer() {
   const { programId, lessonId } = useParams<{ programId: string; lessonId: string }>();
-  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -72,7 +70,7 @@ export default function LessonViewer() {
     if (lessonId && programId) {
       fetchLessonData();
     }
-  }, [lessonId, programId, user]);
+  }, [lessonId, programId]);
 
   const fetchLessonData = async () => {
     try {
@@ -123,17 +121,9 @@ export default function LessonViewer() {
 
       setAssessment(assessmentData);
 
-      // Check if completed
-      if (user) {
-        const { data: progressData } = await supabase
-          .from('lesson_progress')
-          .select('completed_at')
-          .eq('user_id', user.id)
-          .eq('lesson_id', lessonId)
-          .maybeSingle();
-
-        setIsCompleted(!!progressData?.completed_at);
-      }
+      // Check localStorage for completion status
+      const completionKey = `lesson-complete-${lessonId}`;
+      setIsCompleted(localStorage.getItem(completionKey) === 'true');
     } catch (error) {
       console.error('Error fetching lesson:', error);
     } finally {
@@ -142,20 +132,18 @@ export default function LessonViewer() {
   };
 
   const checkModuleComplete = async (currentLesson: Lesson) => {
-    if (!user || !currentLesson.grouping_id) return false;
+    if (!currentLesson.grouping_id) return false;
 
     // Get all lessons in this grouping/module
     const moduleLessons = allLessons.filter(l => l.grouping_id === currentLesson.grouping_id);
     
-    // Get completed lessons
-    const { data: progressData } = await supabase
-      .from('lesson_progress')
-      .select('lesson_id')
-      .eq('user_id', user.id)
-      .in('lesson_id', moduleLessons.map(l => l.id))
-      .not('completed_at', 'is', null);
-
-    const completedIds = new Set(progressData?.map(p => p.lesson_id) || []);
+    // Check localStorage for completed lessons
+    const completedIds = new Set<string>();
+    moduleLessons.forEach(l => {
+      if (localStorage.getItem(`lesson-complete-${l.id}`) === 'true') {
+        completedIds.add(l.id);
+      }
+    });
     
     // Add the current lesson as it's about to be completed
     completedIds.add(currentLesson.id);
@@ -165,23 +153,12 @@ export default function LessonViewer() {
   };
 
   const handleMarkComplete = async () => {
-    if (!user || !lesson) return;
+    if (!lesson) return;
     
     setIsCompleting(true);
     try {
-      // Upsert lesson progress
-      const { error } = await supabase
-        .from('lesson_progress')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lesson.id,
-          completed: true,
-          completed_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,lesson_id',
-        });
-
-      if (error) throw error;
+      // Store completion in localStorage
+      localStorage.setItem(`lesson-complete-${lesson.id}`, 'true');
 
       // Check if this completes the module
       const moduleComplete = await checkModuleComplete(lesson);

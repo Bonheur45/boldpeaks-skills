@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { 
+import {
   ArrowLeft, 
   BookOpen, 
   CheckCircle2, 
@@ -47,7 +46,6 @@ interface Program {
 
 export default function ProgramDetail() {
   const { programId } = useParams<{ programId: string }>();
-  const { user } = useAuth();
   const [program, setProgram] = useState<Program | null>(null);
   const [groupings, setGroupings] = useState<Grouping[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -58,7 +56,7 @@ export default function ProgramDetail() {
     if (programId) {
       fetchProgramData();
     }
-  }, [programId, user]);
+  }, [programId]);
 
   const fetchProgramData = async () => {
     try {
@@ -112,23 +110,18 @@ export default function ProgramDetail() {
           hasVideo: lessonsWithVideo.has(lesson.id),
         }));
         setLessons(enrichedLessons);
-      } else {
-        setLessons(lessonsData || []);
-      }
 
-      // Fetch user progress
-      if (user && lessonsData) {
-        const { data: progressData } = await supabase
-          .from('lesson_progress')
-          .select('lesson_id, completed_at')
-          .eq('user_id', user.id)
-          .in('lesson_id', lessonsData.map((l) => l.id));
-
+        // Check localStorage for progress
         const progressMap: Record<string, LessonProgress> = {};
-        (progressData || []).forEach((p: any) => {
-          progressMap[p.lesson_id] = p;
+        lessonsData.forEach((lesson) => {
+          const isComplete = localStorage.getItem(`lesson-complete-${lesson.id}`) === 'true';
+          if (isComplete) {
+            progressMap[lesson.id] = { lesson_id: lesson.id, completed_at: new Date().toISOString() };
+          }
         });
         setProgress(progressMap);
+      } else {
+        setLessons(lessonsData || []);
       }
     } catch (error) {
       console.error('Error fetching program:', error);

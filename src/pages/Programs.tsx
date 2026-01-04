@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen, Users, ArrowRight, Loader2, Route, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,7 +32,6 @@ interface Program {
 }
 
 export default function Programs() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [pathways, setPathways] = useState<LearningPathway[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -43,10 +41,8 @@ export default function Programs() {
 
   useEffect(() => {
     fetchData();
-    if (user) {
-      fetchEnrollments();
-    }
-  }, [user]);
+    fetchEnrollments();
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -81,7 +77,6 @@ export default function Programs() {
       const { data, error } = await supabase
         .from('enrollments')
         .select('program_id')
-        .eq('user_id', user!.id)
         .eq('status', 'active');
 
       if (error) throw error;
@@ -92,17 +87,13 @@ export default function Programs() {
   };
 
   const handleEnroll = async (programId: string) => {
-    if (!user) return;
-
     setEnrollingId(programId);
 
     try {
-      const { error } = await supabase.from('enrollments').insert({
-        user_id: user.id,
-        program_id: programId,
-      });
-
-      if (error) throw error;
+      // Store enrollment in localStorage since auth is removed
+      const storedEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
+      storedEnrollments.push(programId);
+      localStorage.setItem('enrollments', JSON.stringify(storedEnrollments));
 
       setEnrollments([...enrollments, programId]);
       toast({
