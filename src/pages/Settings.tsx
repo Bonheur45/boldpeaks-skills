@@ -6,13 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Settings as SettingsIcon, User, Loader2 } from 'lucide-react';
 
 export default function Settings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [fullName, setFullName] = useState('');
-  const [email] = useState('user@example.com');
   const [isLoading, setIsLoading] = useState(false);
+
+  const email = user?.email || '';
+
+  useEffect(() => {
+    // Initialize fullName from user metadata
+    const name = user?.user_metadata?.full_name || '';
+    setFullName(name);
+  }, [user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
