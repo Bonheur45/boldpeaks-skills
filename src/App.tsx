@@ -4,7 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import { AuthProvider } from "./contexts/AuthContext";
+import AuthGuard from "./components/auth/AuthGuard";
+
 import LandingPage from "./pages/LandingPage";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Programs from "./pages/Programs";
 import ProgramDetail from "./pages/ProgramDetail";
@@ -32,27 +36,30 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/programs" element={<Programs />} />
-          <Route path="/programs/:programId" element={<ProgramDetail />} />
-          <Route path="/programs/:programId/lessons/:lessonId" element={<LessonViewer />} />
-          <Route path="/programs/:programId/lessons/:lessonId/assessment" element={<Assessment />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/certificates" element={<Certificates />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/pathways" element={<AdminLearningPathways />} />
-          <Route path="/admin/pathways/:pathwayId" element={<AdminPathwayDetail />} />
-          <Route path="/admin/programs" element={<AdminPrograms />} />
-          <Route path="/admin/programs/:programId" element={<AdminProgramDetail />} />
-          <Route path="/admin/programs/:programId/lessons/:lessonId/edit" element={<LessonEditor />} />
-          <Route path="/admin/students" element={<AdminStudents />} />
-          <Route path="/admin/assessments" element={<AdminAssessments />} />
-          <Route path="/admin/invites" element={<AdminInvites />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+            <Route path="/programs" element={<AuthGuard><Programs /></AuthGuard>} />
+            <Route path="/programs/:programId" element={<AuthGuard><ProgramDetail /></AuthGuard>} />
+            <Route path="/programs/:programId/lessons/:lessonId" element={<AuthGuard><LessonViewer /></AuthGuard>} />
+            <Route path="/programs/:programId/lessons/:lessonId/assessment" element={<AuthGuard><Assessment /></AuthGuard>} />
+            <Route path="/leaderboard" element={<AuthGuard><Leaderboard /></AuthGuard>} />
+            <Route path="/certificates" element={<AuthGuard><Certificates /></AuthGuard>} />
+            <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
+            <Route path="/admin/pathways" element={<AuthGuard><AdminLearningPathways /></AuthGuard>} />
+            <Route path="/admin/pathways/:pathwayId" element={<AuthGuard><AdminPathwayDetail /></AuthGuard>} />
+            <Route path="/admin/programs" element={<AuthGuard><AdminPrograms /></AuthGuard>} />
+            <Route path="/admin/programs/:programId" element={<AuthGuard><AdminProgramDetail /></AuthGuard>} />
+            <Route path="/admin/programs/:programId/lessons/:lessonId/edit" element={<AuthGuard><LessonEditor /></AuthGuard>} />
+            <Route path="/admin/students" element={<AuthGuard><AdminStudents /></AuthGuard>} />
+            <Route path="/admin/assessments" element={<AuthGuard><AdminAssessments /></AuthGuard>} />
+            <Route path="/admin/invites" element={<AuthGuard><AdminInvites /></AuthGuard>} />
+            <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
