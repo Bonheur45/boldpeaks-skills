@@ -46,26 +46,23 @@ export default function AdminDashboard() {
     try {
       const [
         { count: pathwaysCount },
-        { data: enrollmentsData },
+        { count: studentsCount },
         { count: programsCount },
         { count: lessonsCount },
         { count: certificatesCount },
         { count: pendingCount },
       ] = await Promise.all([
         supabase.from('learning_pathways').select('*', { count: 'exact', head: true }),
-        supabase.from('enrollments').select('user_id'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('programs').select('*', { count: 'exact', head: true }),
         supabase.from('lessons').select('*', { count: 'exact', head: true }),
         supabase.from('certificates').select('*', { count: 'exact', head: true }),
         supabase.from('assessment_submissions').select('*', { count: 'exact', head: true }).is('score', null),
       ]);
 
-      // Count unique students (users who have enrolled in any program)
-      const uniqueStudents = new Set((enrollmentsData || []).map(e => e.user_id)).size;
-
       setStats({
         totalPathways: pathwaysCount || 0,
-        totalStudents: uniqueStudents,
+        totalStudents: studentsCount || 0,
         totalPrograms: programsCount || 0,
         totalLessons: lessonsCount || 0,
         totalCertificates: certificatesCount || 0,
