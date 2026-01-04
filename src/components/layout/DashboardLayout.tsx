@@ -21,10 +21,8 @@ import {
   Menu,
   GraduationCap,
   UserCog,
-  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 import boldpeaksLogo from '@/assets/boldpeaks-logo.png';
 
 interface DashboardLayoutProps {
@@ -35,18 +33,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut } = useAuth();
 
   // For now, default to student view - can be toggled via URL or state management later
   const isAdmin = location.pathname.startsWith('/admin');
-
-  const userName = user?.user_metadata?.full_name || 'User';
-  const userEmail = user?.email || '';
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   const studentNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -154,7 +143,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                      {getInitials(userName, userEmail)}
+                      {getInitials('User', 'user@example.com')}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -162,9 +151,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span>{userName}</span>
+                    <span>User</span>
                     <span className="text-xs font-normal text-muted-foreground truncate">
-                      {userEmail}
+                      user@example.com
                     </span>
                   </div>
                 </DropdownMenuLabel>
@@ -174,10 +163,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -199,22 +184,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={undefined} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {getInitials(userName, userEmail)}
+                        {getInitials('User', 'user@example.com')}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{userName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                      <p className="text-sm font-medium truncate">User</p>
+                      <p className="text-xs text-muted-foreground truncate">user@example.com</p>
                     </div>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start text-destructive hover:text-destructive"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </Button>
                 </div>
               </SheetContent>
             </Sheet>

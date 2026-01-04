@@ -1,85 +1,145 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RocketAnimation } from '@/components/landing/RocketAnimation';
+import { LearningPathways } from '@/components/landing/LearningPathways';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, BookOpen, Trophy, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, BookOpen, Trophy, Award } from 'lucide-react';
 import boldpeaksLogo from '@/assets/boldpeaks-logo.png';
 
+type AnimationPhase = 'rocket' | 'pathways' | 'welcome';
+
 export default function LandingPage() {
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState<AnimationPhase>('rocket');
+
+  const handleRocketComplete = () => {
+    setPhase('pathways');
+  };
+
+  const handlePathwaysComplete = () => {
+    setPhase('welcome');
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <img src={boldpeaksLogo} alt="BoldPeaks Hub" className="h-10 w-auto" />
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link to="/auth">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/auth">Get Started</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animation Phases */}
+      <AnimatePresence mode="wait">
+        {phase === 'rocket' && (
+          <motion.div
+            key="rocket"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <RocketAnimation onComplete={handleRocketComplete} />
+          </motion.div>
+        )}
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
-        <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold tracking-tight">
-            Elevate Your Learning Journey
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Access world-class communication training programs designed to help you 
-            achieve your professional goals and unlock your full potential.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button size="lg" asChild className="btn-gold">
-              <Link to="/auth">
-                Start Learning <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+        {phase === 'pathways' && (
+          <motion.div
+            key="pathways"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <LearningPathways onComplete={handlePathwaysComplete} />
+          </motion.div>
+        )}
 
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-16 border-t">
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="text-center space-y-4 p-6">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-              <BookOpen className="h-7 w-7 text-primary" />
-            </div>
-            <h3 className="text-xl font-heading font-semibold">Structured Programs</h3>
-            <p className="text-muted-foreground">
-              Follow carefully designed learning paths with engaging lessons and assessments.
-            </p>
-          </div>
-          <div className="text-center space-y-4 p-6">
-            <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center mx-auto">
-              <Trophy className="h-7 w-7 text-accent" />
-            </div>
-            <h3 className="text-xl font-heading font-semibold">Track Progress</h3>
-            <p className="text-muted-foreground">
-              Monitor your achievements and compete on the leaderboard with fellow learners.
-            </p>
-          </div>
-          <div className="text-center space-y-4 p-6">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-              <GraduationCap className="h-7 w-7 text-primary" />
-            </div>
-            <h3 className="text-xl font-heading font-semibold">Earn Certificates</h3>
-            <p className="text-muted-foreground">
-              Complete programs and receive certificates to showcase your accomplishments.
-            </p>
-          </div>
-        </div>
-      </section>
+        {phase === 'welcome' && (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="min-h-screen flex flex-col items-center justify-center bg-background p-4"
+          >
+            <div className="w-full max-w-4xl text-center space-y-8">
+              {/* Logo */}
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <img src={boldpeaksLogo} alt="BoldPeaks" className="h-24 mx-auto" />
+              </motion.div>
 
-      {/* Footer */}
-      <footer className="border-t py-8 mt-12">
-        <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
-          © {new Date().getFullYear()} BoldPeaks Communication. All rights reserved.
-        </div>
-      </footer>
+              {/* Welcome Text */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="space-y-4"
+              >
+                <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground">
+                  Welcome to BoldPeaks Hub
+                </h1>
+                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                  Your journey to mastering communication starts here. Explore our programs and unlock your potential.
+                </p>
+              </motion.div>
+
+              {/* Feature Cards */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="grid gap-4 md:grid-cols-3 mt-8"
+              >
+                <Card className="card-elevated">
+                  <CardHeader>
+                    <BookOpen className="h-8 w-8 text-primary mb-2" />
+                    <CardTitle>Expert Programs</CardTitle>
+                    <CardDescription>Learn from industry-leading content</CardDescription>
+                  </CardHeader>
+                </Card>
+                <Card className="card-elevated">
+                  <CardHeader>
+                    <Trophy className="h-8 w-8 text-accent mb-2" />
+                    <CardTitle>Track Progress</CardTitle>
+                    <CardDescription>Monitor your learning journey</CardDescription>
+                  </CardHeader>
+                </Card>
+                <Card className="card-elevated">
+                  <CardHeader>
+                    <Award className="h-8 w-8 text-primary mb-2" />
+                    <CardTitle>Earn Certificates</CardTitle>
+                    <CardDescription>Get recognized for your achievements</CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+
+              {/* CTA Buttons */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+              >
+                <Button
+                  size="lg"
+                  onClick={() => navigate('/auth')}
+                  className="text-lg px-8"
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate('/auth')}
+                  className="text-lg px-8"
+                >
+                  Sign In
+                </Button>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
