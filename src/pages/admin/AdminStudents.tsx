@@ -98,7 +98,7 @@ export default function AdminStudents() {
 
           return {
             id: profile.id,
-            email: profile.email,
+            email: '',
             full_name: profile.full_name,
             created_at: profile.created_at,
             enrollments: (enrollmentsRes.data || []).map((e: any) => ({

@@ -78,9 +78,13 @@ export default function AdminInvites() {
 
     setIsCreating(true);
     try {
+      const token = generateInviteCode();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const { error } = await supabase.from('invites').insert({
         email: email.trim().toLowerCase(),
-        status: 'pending',
+        token,
+        expires_at: expiresAt,
       });
 
       if (error) throw error;

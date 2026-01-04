@@ -65,7 +65,9 @@ export type Database = {
           options: Json | null
           points: number | null
           question: string
+          question_text: string | null
           question_type: string | null
+          sort_order: number
         }
         Insert: {
           assessment_id: string
@@ -76,7 +78,9 @@ export type Database = {
           options?: Json | null
           points?: number | null
           question: string
+          question_text?: string | null
           question_type?: string | null
+          sort_order?: number
         }
         Update: {
           assessment_id?: string
@@ -87,11 +91,66 @@ export type Database = {
           options?: Json | null
           points?: number | null
           question?: string
+          question_text?: string | null
           question_type?: string | null
+          sort_order?: number
         }
         Relationships: [
           {
             foreignKeyName: "assessment_questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_submissions: {
+        Row: {
+          admin_feedback: string | null
+          answers: Json | null
+          assessment_id: string
+          created_at: string
+          graded_at: string | null
+          id: string
+          is_graded: boolean
+          max_score: number | null
+          score: number | null
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_feedback?: string | null
+          answers?: Json | null
+          assessment_id: string
+          created_at?: string
+          graded_at?: string | null
+          id?: string
+          is_graded?: boolean
+          max_score?: number | null
+          score?: number | null
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_feedback?: string | null
+          answers?: Json | null
+          assessment_id?: string
+          created_at?: string
+          graded_at?: string | null
+          id?: string
+          is_graded?: boolean
+          max_score?: number | null
+          score?: number | null
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_submissions_assessment_id_fkey"
             columns: ["assessment_id"]
             isOneToOne: false
             referencedRelation: "assessments"
@@ -105,8 +164,11 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_published: boolean
+          lesson_id: string | null
           passing_score: number | null
           program_id: string | null
+          time_limit: number | null
           time_limit_minutes: number | null
           title: string
           updated_at: string
@@ -116,8 +178,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_published?: boolean
+          lesson_id?: string | null
           passing_score?: number | null
           program_id?: string | null
+          time_limit?: number | null
           time_limit_minutes?: number | null
           title: string
           updated_at?: string
@@ -127,13 +192,23 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_published?: boolean
+          lesson_id?: string | null
           passing_score?: number | null
           program_id?: string | null
+          time_limit?: number | null
           time_limit_minutes?: number | null
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "assessments_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "assessments_program_id_fkey"
             columns: ["program_id"]
@@ -175,12 +250,51 @@ export type Database = {
           },
         ]
       }
+      content_blocks: {
+        Row: {
+          block_type: string
+          content: Json | null
+          created_at: string
+          id: string
+          lesson_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          block_type: string
+          content?: Json | null
+          created_at?: string
+          id?: string
+          lesson_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          block_type?: string
+          content?: Json | null
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_blocks_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           completed_at: string | null
           enrolled_at: string
           id: string
           program_id: string
+          status: string
           user_id: string
         }
         Insert: {
@@ -188,6 +302,7 @@ export type Database = {
           enrolled_at?: string
           id?: string
           program_id: string
+          status?: string
           user_id: string
         }
         Update: {
@@ -195,11 +310,50 @@ export type Database = {
           enrolled_at?: string
           id?: string
           program_id?: string
+          status?: string
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "enrollments_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groupings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          program_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          program_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          program_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groupings_program_id_fkey"
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "programs"
@@ -277,32 +431,41 @@ export type Database = {
       }
       learning_pathways: {
         Row: {
+          cover_image: string | null
           created_at: string
           description: string | null
           display_order: number | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          is_published: boolean
+          sort_order: number
           title: string
           updated_at: string
         }
         Insert: {
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           display_order?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_published?: boolean
+          sort_order?: number
           title: string
           updated_at?: string
         }
         Update: {
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           display_order?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_published?: boolean
+          sort_order?: number
           title?: string
           updated_at?: string
         }
@@ -359,9 +522,12 @@ export type Database = {
           description: string | null
           display_order: number | null
           duration: string | null
+          grouping_id: string | null
           id: string
           is_active: boolean | null
+          is_published: boolean
           program_id: string
+          sort_order: number
           title: string
           updated_at: string
           video_url: string | null
@@ -372,9 +538,12 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           duration?: string | null
+          grouping_id?: string | null
           id?: string
           is_active?: boolean | null
+          is_published?: boolean
           program_id: string
+          sort_order?: number
           title: string
           updated_at?: string
           video_url?: string | null
@@ -385,14 +554,24 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           duration?: string | null
+          grouping_id?: string | null
           id?: string
           is_active?: boolean | null
+          is_published?: boolean
           program_id?: string
+          sort_order?: number
           title?: string
           updated_at?: string
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lessons_grouping_id_fkey"
+            columns: ["grouping_id"]
+            isOneToOne: false
+            referencedRelation: "groupings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lessons_program_id_fkey"
             columns: ["program_id"]
@@ -428,45 +607,64 @@ export type Database = {
       }
       programs: {
         Row: {
+          cover_image: string | null
           created_at: string
           description: string | null
           display_order: number | null
           duration: string | null
           id: string
           is_active: boolean | null
+          is_published: boolean
+          learning_pathway_id: string | null
           level: string | null
           pathway_id: string | null
+          sort_order: number
           thumbnail_url: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           display_order?: number | null
           duration?: string | null
           id?: string
           is_active?: boolean | null
+          is_published?: boolean
+          learning_pathway_id?: string | null
           level?: string | null
           pathway_id?: string | null
+          sort_order?: number
           thumbnail_url?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           display_order?: number | null
           duration?: string | null
           id?: string
           is_active?: boolean | null
+          is_published?: boolean
+          learning_pathway_id?: string | null
           level?: string | null
           pathway_id?: string | null
+          sort_order?: number
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "programs_learning_pathway_id_fkey"
+            columns: ["learning_pathway_id"]
+            isOneToOne: false
+            referencedRelation: "learning_pathways"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "programs_pathway_id_fkey"
             columns: ["pathway_id"]

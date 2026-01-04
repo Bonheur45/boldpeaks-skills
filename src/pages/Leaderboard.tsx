@@ -190,13 +190,13 @@ export default function Leaderboard() {
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={entry.profile?.avatar_url || undefined} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {getInitials(entry.profile?.full_name, entry.profile?.email)}
+                          {getInitials(entry.profile?.full_name, entry.user_id)}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="flex-1">
                         <p className="font-medium flex items-center gap-2">
-                          {entry.profile?.full_name || entry.profile?.email?.split('@')[0] || 'Anonymous'}
+                          {entry.profile?.full_name || `Student ${entry.user_id.slice(0, 6)}`}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {entry.lessons_completed} lessons completed

@@ -21,10 +21,12 @@ import {
   Menu,
   GraduationCap,
   UserCog,
+  Shield,
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/useUserRoles';
 import boldpeaksLogo from '@/assets/boldpeaks-logo.png';
 
 interface DashboardLayoutProps {
@@ -36,9 +38,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAdmin: hasAdminRole, isLoading: rolesLoading } = useIsAdmin();
 
-  // For now, default to student view - can be toggled via URL or state management later
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isInAdminArea = location.pathname.startsWith('/admin');
 
   const handleSignOut = async () => {
     await signOut();
@@ -60,7 +62,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/admin/invites', label: 'Admin Invites', icon: UserCog },
   ];
 
-  const navItems = isAdmin ? adminNavItems : studentNavItems;
+  const navItems = isInAdminArea ? adminNavItems : studentNavItems;
 
   const getInitials = (name?: string | null, email?: string) => {
     if (name) {
@@ -104,7 +106,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           {/* Logo */}
-          <Link to={isAdmin ? '/admin' : '/dashboard'} className="flex items-center gap-2">
+          <Link to={isInAdminArea ? '/admin' : '/dashboard'} className="flex items-center gap-2">
             <img src={boldpeaksLogo} alt="BoldPeaks Hub" className="h-10 w-auto" />
           </Link>
 
@@ -136,12 +138,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <span
               className={cn(
                 'hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                isAdmin
+                hasAdminRole
                   ? 'bg-accent/20 text-accent-foreground border border-accent/30'
                   : 'bg-primary/10 text-primary border border-primary/20'
               )}
             >
-              {isAdmin ? 'Admin' : 'Student'}
+              {rolesLoading ? '...' : hasAdminRole ? 'Admin' : 'Student'}
             </span>
 
             {/* Desktop User Menu */}
@@ -166,6 +168,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {hasAdminRole && !rolesLoading && (
+                  <DropdownMenuItem asChild>
+                    <Link to={isInAdminArea ? '/dashboard' : '/admin'}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      {isInAdminArea ? 'Student Portal' : 'Admin Portal'}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link to="/settings">
                     <Settings className="mr-2 h-4 w-4" />
