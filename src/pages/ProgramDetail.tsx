@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  ArrowLeft, 
-  BookOpen, 
-  CheckCircle2, 
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
   Trophy
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,7 +35,7 @@ interface Lesson {
 
 interface LessonProgress {
   lesson_id: string;
-  completed_at: string | null;
+  completed: boolean | null;
 }
 
 interface Program {
@@ -46,6 +47,7 @@ interface Program {
 
 export default function ProgramDetail() {
   const { programId } = useParams<{ programId: string }>();
+  const { user } = useAuth();
   const [program, setProgram] = useState<Program | null>(null);
   const [groupings, setGroupings] = useState<Grouping[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -56,7 +58,7 @@ export default function ProgramDetail() {
     if (programId) {
       fetchProgramData();
     }
-  }, [programId]);
+  }, [programId, user?.id]);
 
   const fetchProgramData = async () => {
     try {
@@ -111,14 +113,25 @@ export default function ProgramDetail() {
         }));
         setLessons(enrichedLessons);
 
-        // Check localStorage for progress
+        // Fetch completion status from backend progress table
         const progressMap: Record<string, LessonProgress> = {};
-        lessonsData.forEach((lesson) => {
-          const isComplete = localStorage.getItem(`lesson-complete-${lesson.id}`) === 'true';
-          if (isComplete) {
-            progressMap[lesson.id] = { lesson_id: lesson.id, completed_at: new Date().toISOString() };
+
+        if (user?.id) {
+          const { data: progressRows, error: progressError } = await supabase
+            .from('lesson_progress')
+            .select('lesson_id, completed')
+            .eq('user_id', user.id)
+            .in('lesson_id', lessonsData.map((l) => l.id));
+
+          if (progressError) {
+            console.error('Error fetching lesson progress:', progressError);
           }
-        });
+
+          (progressRows || []).forEach((p) => {
+            progressMap[p.lesson_id] = { lesson_id: p.lesson_id, completed: p.completed };
+          });
+        }
+
         setProgress(progressMap);
       } else {
         setLessons(lessonsData || []);
@@ -136,12 +149,12 @@ export default function ProgramDetail() {
 
   const getOverallProgress = () => {
     if (lessons.length === 0) return 0;
-    const completedCount = Object.values(progress).filter((p) => p.completed_at).length;
+    const completedCount = Object.values(progress).filter((p) => p.completed).length;
     return Math.round((completedCount / lessons.length) * 100);
   };
 
   const isLessonCompleted = (lessonId: string) => {
-    return !!progress[lessonId]?.completed_at;
+    return !!progress[lessonId]?.completed;
   };
 
   if (isLoading) {

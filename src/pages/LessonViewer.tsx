@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  CheckCircle2, 
+import { useAuth } from '@/contexts/AuthContext';
+import { markLessonCompleted } from '@/lib/progressUtils';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
   BookOpen,
   FileText,
   Video,
@@ -54,7 +56,8 @@ export default function LessonViewer() {
   const { programId, lessonId } = useParams<{ programId: string; lessonId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+  const { user } = useAuth();
+
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
@@ -70,7 +73,7 @@ export default function LessonViewer() {
     if (lessonId && programId) {
       fetchLessonData();
     }
-  }, [lessonId, programId]);
+  }, [lessonId, programId, user?.id]);
 
   const fetchLessonData = async () => {
     try {
@@ -121,9 +124,35 @@ export default function LessonViewer() {
 
       setAssessment(assessmentData);
 
-      // Check localStorage for completion status
+      // Check completion status (DB first, local fallback)
       const completionKey = `lesson-complete-${lessonId}`;
-      setIsCompleted(localStorage.getItem(completionKey) === 'true');
+      const localComplete = localStorage.getItem(completionKey) === 'true';
+
+      if (user?.id) {
+        const { data: progressRow } = await supabase
+          .from('lesson_progress')
+          .select('completed')
+          .eq('user_id', user.id)
+          .eq('lesson_id', lessonId)
+          .limit(1)
+          .maybeSingle();
+
+        const dbComplete = !!progressRow?.completed;
+
+        // Backfill previous local progress into backend
+        if (localComplete && !dbComplete) {
+          await markLessonCompleted({ userId: user.id, lessonId });
+        }
+
+        const finalComplete = dbComplete || localComplete;
+        setIsCompleted(finalComplete);
+
+        if (finalComplete && !localComplete) {
+          localStorage.setItem(completionKey, 'true');
+        }
+      } else {
+        setIsCompleted(localComplete);
+      }
     } catch (error) {
       console.error('Error fetching lesson:', error);
     } finally {
@@ -154,22 +183,35 @@ export default function LessonViewer() {
 
   const handleMarkComplete = async () => {
     if (!lesson) return;
-    
+
+    if (!user?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign in required',
+        description: 'Please sign in to save your progress.',
+      });
+      navigate('/auth');
+      return;
+    }
+
     setIsCompleting(true);
     try {
-      // Store completion in localStorage
+      // Store completion locally for instant UI + module completion checks
       localStorage.setItem(`lesson-complete-${lesson.id}`, 'true');
+
+      // Persist completion to backend progress table
+      await markLessonCompleted({ userId: user.id, lessonId: lesson.id });
 
       // Check if this completes the module
       const moduleComplete = await checkModuleComplete(lesson);
-      
+
       setIsCompleted(true);
-      
+
       if (moduleComplete) {
         setIsModuleComplete(true);
         setShowCelebration(true);
-        
-        const grouping = groupings.find(g => g.id === lesson.grouping_id);
+
+        const grouping = groupings.find((g) => g.id === lesson.grouping_id);
         toast({
           title: '🎉 Module Complete!',
           description: `Congratulations! You have completed "${grouping?.title || 'this module'}"!`,
