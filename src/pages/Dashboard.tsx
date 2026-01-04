@@ -31,10 +31,14 @@ export default function Dashboard() {
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   useEffect(() => {
-    fetchEnrollments();
-  }, []);
+    if (user?.id) {
+      fetchEnrollments();
+    }
+  }, [user?.id]);
 
   const fetchEnrollments = async () => {
+    if (!user?.id) return;
+    
     try {
       const { data: enrollments, error } = await supabase
         .from('enrollments')
@@ -44,6 +48,7 @@ export default function Dashboard() {
           completed_at,
           program:programs(id, title, description, cover_image)
         `)
+        .eq('user_id', user.id)
         .eq('status', 'active');
 
       if (error) throw error;
@@ -56,15 +61,26 @@ export default function Dashboard() {
           .eq('program_id', enrollment.program.id)
           .eq('is_published', true);
 
+        const lessonIds = (lessons || []).map((l: any) => l.id);
+        
+        if (lessonIds.length === 0) {
+          return {
+            programId: enrollment.program.id,
+            total: 0,
+            completed: 0,
+          };
+        }
+
         const { data: progress } = await supabase
           .from('lesson_progress')
-          .select('lesson_id, completed_at')
-          .in('lesson_id', (lessons || []).map((l: any) => l.id));
+          .select('lesson_id, completed')
+          .eq('user_id', user.id)
+          .in('lesson_id', lessonIds);
 
         return {
           programId: enrollment.program.id,
           total: lessons?.length || 0,
-          completed: (progress || []).filter((p: any) => p.completed_at).length,
+          completed: (progress || []).filter((p: any) => p.completed).length,
         };
       });
 
