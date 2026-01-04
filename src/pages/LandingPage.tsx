@@ -19,7 +19,7 @@ export default function LandingPage() {
   };
 
   const handlePathwaysComplete = () => {
-    setPhase('welcome');
+    navigate('/auth');
   };
 
   return (
