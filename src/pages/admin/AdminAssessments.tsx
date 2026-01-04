@@ -42,7 +42,7 @@ interface Submission {
   };
   profile: {
     full_name: string | null;
-    email: string;
+    email?: string;
   };
 }
 
@@ -72,7 +72,7 @@ export default function AdminAssessments() {
               program:programs(title)
             )
           ),
-          profile:profiles(full_name, email)
+          profile:profiles(full_name)
         `)
         .order('submitted_at', { ascending: false });
 
@@ -146,12 +146,12 @@ export default function AdminAssessments() {
       <CardContent className="flex items-center gap-4 py-4">
         <Avatar>
           <AvatarFallback>
-            {getInitials(submission.profile?.full_name, submission.profile?.email)}
+            {getInitials(submission.profile?.full_name, submission.user_id)}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate">
-            {submission.profile?.full_name || submission.profile?.email}
+            {submission.profile?.full_name || `Student ${submission.user_id.slice(0, 8)}`}
           </p>
           <p className="text-sm text-muted-foreground truncate">
             {submission.assessment?.title} • {submission.assessment?.lesson?.program?.title}
@@ -278,12 +278,12 @@ export default function AdminAssessments() {
                 <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
                   <Avatar>
                     <AvatarFallback>
-                      {getInitials(selectedSubmission.profile?.full_name, selectedSubmission.profile?.email)}
+                      {getInitials(selectedSubmission.profile?.full_name, selectedSubmission.user_id)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">
-                      {selectedSubmission.profile?.full_name || selectedSubmission.profile?.email}
+                      {selectedSubmission.profile?.full_name || `Student ${selectedSubmission.user_id.slice(0, 8)}`}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {selectedSubmission.assessment?.title}

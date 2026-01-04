@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { AuthProvider } from "./contexts/AuthContext";
 import AuthGuard from "./components/auth/AuthGuard";
+import AdminGuard from "./components/auth/AdminGuard";
 
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
@@ -47,15 +48,15 @@ const App = () => (
             <Route path="/programs/:programId/lessons/:lessonId/assessment" element={<AuthGuard><Assessment /></AuthGuard>} />
             <Route path="/leaderboard" element={<AuthGuard><Leaderboard /></AuthGuard>} />
             <Route path="/certificates" element={<AuthGuard><Certificates /></AuthGuard>} />
-            <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
-            <Route path="/admin/pathways" element={<AuthGuard><AdminLearningPathways /></AuthGuard>} />
-            <Route path="/admin/pathways/:pathwayId" element={<AuthGuard><AdminPathwayDetail /></AuthGuard>} />
-            <Route path="/admin/programs" element={<AuthGuard><AdminPrograms /></AuthGuard>} />
-            <Route path="/admin/programs/:programId" element={<AuthGuard><AdminProgramDetail /></AuthGuard>} />
-            <Route path="/admin/programs/:programId/lessons/:lessonId/edit" element={<AuthGuard><LessonEditor /></AuthGuard>} />
-            <Route path="/admin/students" element={<AuthGuard><AdminStudents /></AuthGuard>} />
-            <Route path="/admin/assessments" element={<AuthGuard><AdminAssessments /></AuthGuard>} />
-            <Route path="/admin/invites" element={<AuthGuard><AdminInvites /></AuthGuard>} />
+            <Route path="/admin" element={<AuthGuard><AdminGuard><AdminDashboard /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/pathways" element={<AuthGuard><AdminGuard><AdminLearningPathways /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/pathways/:pathwayId" element={<AuthGuard><AdminGuard><AdminPathwayDetail /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/programs" element={<AuthGuard><AdminGuard><AdminPrograms /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/programs/:programId" element={<AuthGuard><AdminGuard><AdminProgramDetail /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/programs/:programId/lessons/:lessonId/edit" element={<AuthGuard><AdminGuard><LessonEditor /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/students" element={<AuthGuard><AdminGuard><AdminStudents /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/assessments" element={<AuthGuard><AdminGuard><AdminAssessments /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/invites" element={<AuthGuard><AdminGuard><AdminInvites /></AdminGuard></AuthGuard>} />
             <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

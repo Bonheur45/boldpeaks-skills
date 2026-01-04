@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useIsAdmin } from '@/hooks/useUserRoles';
 import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import boldpeaksLogo from '@/assets/boldpeaks-logo.png';
 
@@ -23,13 +24,22 @@ const Auth: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
 
+  const { isAdmin, isLoading: rolesLoading } = useIsAdmin();
+
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      const from = (location.state as any)?.from?.pathname || '/dashboard';
+    if (!user) return;
+
+    const from = (location.state as any)?.from?.pathname as string | undefined;
+    if (from && from !== '/auth') {
       navigate(from, { replace: true });
+      return;
     }
-  }, [user, navigate, location]);
+
+    if (rolesLoading) return;
+
+    navigate(isAdmin ? '/admin' : '/dashboard', { replace: true });
+  }, [user, navigate, location, rolesLoading, isAdmin]);
 
   // Check URL params for mode
   useEffect(() => {

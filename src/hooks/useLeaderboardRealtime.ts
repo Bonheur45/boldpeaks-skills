@@ -8,7 +8,6 @@ interface LeaderboardEntry {
   profile: {
     full_name: string | null;
     avatar_url: string | null;
-    email: string;
   } | null;
 }
 
@@ -67,7 +66,7 @@ export function useLeaderboardRealtime(programId: string, userId?: string) {
       // Get profiles
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url, email')
+        .select('id, full_name, avatar_url')
         .in('id', userIds);
 
       // Calculate scores for each user
@@ -105,7 +104,6 @@ export function useLeaderboardRealtime(programId: string, userId?: string) {
             profile: profile ? {
               full_name: profile.full_name,
               avatar_url: profile.avatar_url,
-              email: profile.email,
             } : null,
           };
         });
