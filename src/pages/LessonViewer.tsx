@@ -139,18 +139,15 @@ export default function LessonViewer() {
 
         const dbComplete = !!progressRow?.completed;
 
-        // Backfill previous local progress into backend
-        if (localComplete && !dbComplete) {
-          await markLessonCompleted({ userId: user.id, lessonId });
-        }
+        // Only use DB completion status (don't auto-backfill local progress)
+        setIsCompleted(dbComplete);
 
-        const finalComplete = dbComplete || localComplete;
-        setIsCompleted(finalComplete);
-
-        if (finalComplete && !localComplete) {
+        // Sync localStorage with DB state
+        if (dbComplete) {
           localStorage.setItem(completionKey, 'true');
         }
       } else {
+        // For non-logged-in users, use localStorage
         setIsCompleted(localComplete);
       }
     } catch (error) {
