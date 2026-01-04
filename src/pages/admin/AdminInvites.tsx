@@ -15,7 +15,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { UserCog, Plus, Copy, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,7 +30,6 @@ interface AdminInvite {
 }
 
 export default function AdminInvites() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +80,6 @@ export default function AdminInvites() {
     try {
       const { error } = await supabase.from('invites').insert({
         email: email.trim().toLowerCase(),
-        invited_by: user?.id,
         status: 'pending',
       });
 

@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, Medal, Crown, TrendingUp, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
@@ -16,26 +15,22 @@ interface Program {
 }
 
 export default function Leaderboard() {
-  const { user } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<string>('');
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
 
-  const { rankings, isLoading, userRank, refresh } = useLeaderboardRealtime(selectedProgram, user?.id);
+  const { rankings, isLoading, userRank, refresh } = useLeaderboardRealtime(selectedProgram, undefined);
 
   useEffect(() => {
     fetchPrograms();
-  }, [user]);
+  }, []);
 
   const fetchPrograms = async () => {
-    if (!user) return;
-    
     setIsLoadingPrograms(true);
     try {
       const { data, error } = await supabase
         .from('enrollments')
         .select('program_id, programs(id, title)')
-        .eq('user_id', user.id)
         .eq('status', 'active');
 
       if (error) throw error;
@@ -181,15 +176,11 @@ export default function Leaderboard() {
             ) : (
               <div className="space-y-2">
                 {rankings.map((entry) => {
-                  const isCurrentUser = entry.user_id === user?.id;
-                  
                   return (
                     <div
                       key={entry.user_id}
                       className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
-                        isCurrentUser 
-                          ? 'bg-primary/5 border-primary/20' 
-                          : getRankBackground(entry.rank_position) || 'hover:bg-muted/50'
+                        getRankBackground(entry.rank_position) || 'hover:bg-muted/50'
                       }`}
                     >
                       <div className="w-12 flex justify-center">
@@ -206,9 +197,6 @@ export default function Leaderboard() {
                       <div className="flex-1">
                         <p className="font-medium flex items-center gap-2">
                           {entry.profile?.full_name || entry.profile?.email?.split('@')[0] || 'Anonymous'}
-                          {isCurrentUser && (
-                            <Badge variant="secondary" className="text-xs">You</Badge>
-                          )}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {entry.lessons_completed} lessons completed

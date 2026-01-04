@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { BookOpen, Trophy, Award, ArrowRight, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -22,22 +21,14 @@ interface EnrolledProgram {
   completed_at: string | null;
 }
 
-interface LessonProgress {
-  lesson_id: string;
-  completed_at: string | null;
-}
-
 export default function Dashboard() {
-  const { user } = useAuth();
   const [enrolledPrograms, setEnrolledPrograms] = useState<EnrolledProgram[]>([]);
   const [progressData, setProgressData] = useState<Record<string, { total: number; completed: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchEnrollments();
-    }
-  }, [user]);
+    fetchEnrollments();
+  }, []);
 
   const fetchEnrollments = async () => {
     try {
@@ -49,7 +40,6 @@ export default function Dashboard() {
           completed_at,
           program:programs(id, title, description, cover_image)
         `)
-        .eq('user_id', user!.id)
         .eq('status', 'active');
 
       if (error) throw error;
@@ -65,7 +55,6 @@ export default function Dashboard() {
         const { data: progress } = await supabase
           .from('lesson_progress')
           .select('lesson_id, completed_at')
-          .eq('user_id', user!.id)
           .in('lesson_id', (lessons || []).map((l: any) => l.id));
 
         return {
@@ -102,7 +91,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="space-y-2">
           <h1 className="text-3xl font-body font-bold text-foreground">
-            Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name.split(' ')[0]}` : ''}!
+            Welcome back!
           </h1>
           <p className="text-muted-foreground">
             Continue your learning journey and master the art of communication.

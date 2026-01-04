@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { Award, Download, Eye, Calendar, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -22,26 +21,17 @@ interface Certificate {
   };
 }
 
-interface UserProfile {
-  full_name: string | null;
-  email: string;
-}
-
 export default function Certificates() {
-  const { user } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [userName, setUserName] = useState('Student');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchCertificates();
-      fetchProfile();
-    }
-  }, [user]);
+    fetchCertificates();
+  }, []);
 
   const fetchCertificates = async () => {
     try {
@@ -53,7 +43,6 @@ export default function Certificates() {
           issued_at,
           program:programs(id, title, description)
         `)
-        .eq('user_id', user!.id)
         .order('issued_at', { ascending: false });
 
       if (error) throw error;
@@ -71,21 +60,6 @@ export default function Certificates() {
     }
   };
 
-  const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', user!.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-  };
-
   const downloadCertificate = async (cert: Certificate) => {
     setIsDownloading(true);
     
@@ -96,7 +70,7 @@ export default function Certificates() {
         format: 'a4',
       });
 
-      const recipientName = profile?.full_name || profile?.email || 'Student';
+      const recipientName = userName;
       const programTitle = cert.program?.title || 'Training Program';
       const issueDate = format(new Date(cert.issued_at), 'MMMM d, yyyy');
 
@@ -305,7 +279,7 @@ export default function Certificates() {
                   <p className="text-slate-600">This is to certify that</p>
                   
                   <p className="text-2xl md:text-3xl font-heading font-bold text-slate-800 border-b-2 border-amber-500 pb-2">
-                    {profile?.full_name || profile?.email || 'Student'}
+                    {userName}
                   </p>
                   
                   <p className="text-slate-600">has successfully completed the training program</p>
