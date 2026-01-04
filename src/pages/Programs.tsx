@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Users, ArrowRight, Loader2, Route, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { BookOpen, Users, ArrowRight, Loader2, Route } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Accordion,
@@ -33,6 +34,9 @@ interface Program {
 
 export default function Programs() {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
   const [pathways, setPathways] = useState<LearningPathway[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [enrollments, setEnrollments] = useState<string[]>([]);
@@ -41,8 +45,13 @@ export default function Programs() {
 
   useEffect(() => {
     fetchData();
-    fetchEnrollments();
   }, []);
+
+  useEffect(() => {
+    if (!authLoading && user?.id) {
+      fetchEnrollments();
+    }
+  }, [authLoading, user?.id]);
 
   const fetchData = async () => {
     try {
@@ -73,10 +82,13 @@ export default function Programs() {
   };
 
   const fetchEnrollments = async () => {
+    if (!user?.id) return;
+
     try {
       const { data, error } = await supabase
         .from('enrollments')
         .select('program_id')
+        .eq('user_id', user.id)
         .eq('status', 'active');
 
       if (error) throw error;
@@ -87,15 +99,47 @@ export default function Programs() {
   };
 
   const handleEnroll = async (programId: string) => {
+    if (!user?.id) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign in required',
+        description: 'Please sign in to enroll in a program.',
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (enrollments.includes(programId)) {
+      toast({
+        title: 'Already enrolled',
+        description: 'You are already enrolled in this program.',
+      });
+      return;
+    }
+
     setEnrollingId(programId);
 
     try {
-      // Store enrollment in localStorage since auth is removed
-      const storedEnrollments = JSON.parse(localStorage.getItem('enrollments') || '[]');
-      storedEnrollments.push(programId);
-      localStorage.setItem('enrollments', JSON.stringify(storedEnrollments));
+      const { data: existing, error: existingError } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('program_id', programId)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
 
-      setEnrollments([...enrollments, programId]);
+      if (existingError) throw existingError;
+
+      if (!existing?.id) {
+        const { error: insertError } = await supabase
+          .from('enrollments')
+          .insert({ user_id: user.id, program_id: programId });
+
+        if (insertError) throw insertError;
+      }
+
+      setEnrollments((prev) => (prev.includes(programId) ? prev : [...prev, programId]));
       toast({
         title: 'Enrolled successfully!',
         description: 'You can now access the program lessons.',

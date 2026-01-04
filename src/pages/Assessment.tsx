@@ -11,10 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  CheckCircle2, 
+import { useAuth } from '@/contexts/AuthContext';
+import { markLessonCompleted } from '@/lib/progressUtils';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
   FileText,
   Clock,
   AlertCircle,
@@ -52,6 +54,7 @@ export default function AssessmentPage() {
   const { programId, lessonId } = useParams<{ programId: string; lessonId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -145,10 +148,14 @@ export default function AssessmentPage() {
       
       localStorage.setItem(`assessment-${assessment.id}`, JSON.stringify(submission));
 
-      // Mark lesson as complete in localStorage
-      localStorage.setItem(`lesson-complete-${lessonId}`, 'true');
+       // Mark lesson as complete (local + backend)
+       localStorage.setItem(`lesson-complete-${lessonId}`, 'true');
 
-      setPreviousSubmission(submission);
+       if (user?.id && lessonId) {
+         await markLessonCompleted({ userId: user.id, lessonId });
+       }
+
+       setPreviousSubmission(submission);
       setShowResults(true);
 
       toast({
