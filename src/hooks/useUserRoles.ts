@@ -5,12 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 export type AppRole = "admin" | "moderator" | "user";
 
 export function useUserRoles() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   return useQuery({
     queryKey: ["user_roles", user?.id],
-    enabled: !!user?.id,
+    enabled: !!user?.id && !authLoading,
     staleTime: 60_000,
+    retry: 2,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_roles")
@@ -24,11 +25,14 @@ export function useUserRoles() {
 }
 
 export function useIsAdmin() {
+  const { loading: authLoading } = useAuth();
   const query = useUserRoles();
   const roles = query.data ?? [];
+  
   return {
     ...query,
     roles,
     isAdmin: roles.includes("admin"),
+    isLoading: authLoading || query.isLoading,
   };
 }
