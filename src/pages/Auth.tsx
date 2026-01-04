@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import boldpeaksLogo from '@/assets/boldpeaks-logo.png';
 
 type AuthMode = 'signin' | 'signup' | 'forgot' | 'reset';
 
@@ -259,7 +260,10 @@ const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      {/* Logo */}
+      <img src={boldpeaksLogo} alt="BoldPeaks" className="h-20 mb-6" />
+      
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">{getTitle()}</CardTitle>
