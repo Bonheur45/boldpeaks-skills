@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { BookOpen, Trophy, Award, ArrowRight, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EnrolledProgram {
   id: string;
@@ -22,9 +23,12 @@ interface EnrolledProgram {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [enrolledPrograms, setEnrolledPrograms] = useState<EnrolledProgram[]>([]);
   const [progressData, setProgressData] = useState<Record<string, { total: number; completed: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   useEffect(() => {
     fetchEnrollments();
@@ -91,11 +95,8 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="space-y-2">
           <h1 className="text-3xl font-body font-bold text-foreground">
-            Welcome back!
+            Welcome back{firstName ? `, ${firstName}` : ''}!
           </h1>
-          <p className="text-muted-foreground">
-            Continue your learning journey and master the art of communication.
-          </p>
         </div>
 
         {/* Quick Stats */}
