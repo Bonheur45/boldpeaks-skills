@@ -112,19 +112,28 @@ export default function LandingPage() {
                 </Card>
               </motion.div>
 
-              {/* CTA Button */}
+              {/* CTA Buttons */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center"
               >
                 <Button
                   size="lg"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/auth')}
                   className="text-lg px-8"
                 >
                   Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate('/auth')}
+                  className="text-lg px-8"
+                >
+                  Sign In
                 </Button>
               </motion.div>
             </div>
