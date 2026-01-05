@@ -66,7 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Clear state immediately to prevent re-authentication race conditions
+    setUser(null);
+    setSession(null);
+    
+    // Sign out from Supabase with global scope to clear all sessions
+    await supabase.auth.signOut({ scope: 'global' });
   };
 
   const resetPassword = async (email: string) => {
