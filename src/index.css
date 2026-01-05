@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* BoldPeaks Communication Design System
+   Color Palette:
+   - Warm dirty white (background)
+   - Very deep blue (primary)
+   - Gold (accent)
+   Professional, calm, educational, premium
+   
+   Typography:
+   - Space Grotesk for headings (modern, geometric)
+   - DM Sans for body (clean, readable)
+*/
+
+@layer base {
+  :root {
+    /* Warm dirty white background */
+    --background: 40 20% 97%;
+    --foreground: 220 50% 12%;
+
+    /* Cards with subtle warmth */
+    --card: 40 25% 99%;
+    --card-foreground: 220 50% 12%;
+
+    --popover: 40 25% 99%;
+    --popover-foreground: 220 50% 12%;
+
+    /* Very deep blue primary */
+    --primary: 220 70% 12%;
+    --primary-foreground: 40 20% 97%;
+
+    /* Soft blue-gray secondary */
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 220 50% 18%;
+
+    /* Muted tones */
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 15% 45%;
+
+    /* Gold accent */
+    --accent: 42 85% 55%;
+    --accent-foreground: 220 50% 12%;
+
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 220 20% 88%;
+    --input: 220 20% 88%;
+    --ring: 220 65% 18%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar - deep blue theme */
+    --sidebar-background: 220 65% 18%;
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-primary: 42 85% 55%;
+    --sidebar-primary-foreground: 220 50% 12%;
+    --sidebar-accent: 220 55% 25%;
+    --sidebar-accent-foreground: 40 20% 95%;
+    --sidebar-border: 220 50% 25%;
+    --sidebar-ring: 42 85% 55%;
+
+    /* Custom tokens */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Typography */
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 220 50% 8%;
+    --foreground: 40 20% 95%;
+
+    --card: 220 45% 12%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 220 45% 12%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 42 85% 55%;
+    --primary-foreground: 220 50% 8%;
+
+    --secondary: 220 40% 20%;
+    --secondary-foreground: 40 20% 95%;
+
+    --muted: 220 40% 18%;
+    --muted-foreground: 220 15% 60%;
+
+    --accent: 42 85% 55%;
+    --accent-foreground: 220 50% 8%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 40% 22%;
+    --input: 220 40% 22%;
+    --ring: 42 85% 55%;
+
+    --sidebar-background: 220 55% 10%;
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-primary: 42 85% 55%;
+    --sidebar-primary-foreground: 220 50% 8%;
+    --sidebar-accent: 220 45% 18%;
+    --sidebar-accent-foreground: 40 20% 95%;
+    --sidebar-border: 220 40% 20%;
+    --sidebar-ring: 42 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .btn-gold {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 transition-colors;
+  }
+
+  .card-elevated {
+    @apply bg-card shadow-lg shadow-primary/5 border border-border/50;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent;
+  }
+
+  .gold-gradient {
+    @apply bg-gradient-to-r from-accent to-amber-400;
+  }
+
+  /* Rich text content styles - for viewer */
+  .prose-content {
+    @apply whitespace-pre-wrap;
+  }
+
+  .prose-content p {
+    @apply mb-4;
+    text-indent: 0;
+  }
+
+  .prose-content p + p {
+    @apply mt-4;
+  }
+
+  /* Rich text rendered content - preserve all inline styles */
+  .prose-content table,
+  .prose table {
+    @apply border-collapse w-full my-4;
+  }
+
+  .prose-content th,
+  .prose-content td,
+  .prose th,
+  .prose td {
+    @apply border border-border p-3 text-left;
+  }
+
+  .prose-content th,
+  .prose th {
+    @apply bg-muted font-semibold;
+  }
+
+  .prose-content tr:nth-child(even),
+  .prose tr:nth-child(even) {
+    @apply bg-muted/30;
+  }
+
+  /* Ensure inline styles from TipTap are respected */
+  .prose-content [style*="color"],
+  .prose [style*="color"] {
+    color: inherit;
+  }
+
+  .prose-content [style*="font-size"],
+  .prose [style*="font-size"] {
+    font-size: inherit;
+  }
+
+  /* Table styles for TipTap Editor */
+  .ProseMirror {
+    @apply outline-none;
+  }
+
+  .ProseMirror table {
+    @apply border-collapse w-full my-4;
+  }
+
+  .ProseMirror th,
+  .ProseMirror td {
+    @apply border border-border p-3 text-left min-w-[100px];
+  }
+
+  .ProseMirror th {
+    @apply bg-muted font-semibold;
+  }
+
+  .ProseMirror tr:nth-child(even) {
+    @apply bg-muted/30;
+  }
+
+  /* Text color and font-size support in editor */
+  .ProseMirror span[style*="color"] {
+    /* Ensure color is applied */
+  }
+
+  .ProseMirror p,
+  .ProseMirror li {
+    @apply leading-relaxed;
+  }
+
+  /* Glow effect for completed lesson cards */
+  .lesson-card-completed {
+    @apply relative;
+  }
+
+  .lesson-card-completed::before {
+    content: '';
+    @apply absolute left-0 top-3 bottom-3 w-1 rounded-full bg-success;
+    box-shadow: 0 0 12px 2px hsl(var(--success) / 0.5);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
