@@ -227,23 +227,16 @@ export default function ProgramDetail() {
             <div className="w-full">
               <div className="flex items-center justify-between text-sm text-primary-foreground/80 mb-2">
                 <span>Overall Progress</span>
+                <span className="font-medium">{overallProgress}%</span>
               </div>
-              <div className="relative">
-                <div 
-                  className="absolute -top-6 text-sm font-medium text-primary-foreground"
-                  style={{ left: `${overallProgress}%`, transform: 'translateX(-50%)' }}
-                >
-                  {overallProgress}%
-                </div>
-                <div className="flex items-center gap-4">
-                  <Progress value={overallProgress} className="h-2 bg-primary-foreground/20 flex-1" />
-                  {overallProgress === 100 && (
-                    <Badge className="bg-success text-success-foreground gap-1 whitespace-nowrap">
-                      <Trophy className="h-3 w-3" />
-                      Completed
-                    </Badge>
-                  )}
-                </div>
+              <div className="flex items-center gap-4">
+                <Progress value={overallProgress} className="h-2 bg-primary-foreground/20 flex-1" />
+                {overallProgress === 100 && (
+                  <Badge className="bg-success text-success-foreground gap-1 whitespace-nowrap">
+                    <Trophy className="h-3 w-3" />
+                    Completed
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
