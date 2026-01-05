@@ -208,13 +208,6 @@ export default function Dashboard() {
                         />
                       )}
                       <div className="absolute inset-0 bg-primary/40" />
-                      <div className="absolute top-3 right-3">
-                        {isCompleted ? (
-                          <Badge className="bg-success text-success-foreground">Completed</Badge>
-                        ) : (
-                          <Badge variant="secondary">{progress}% Complete</Badge>
-                        )}
-                      </div>
                     </div>
                     <CardHeader>
                       <CardTitle className="line-clamp-1 font-body">{enrollment.program.title}</CardTitle>
@@ -223,12 +216,18 @@ export default function Dashboard() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Progress value={progress} className="h-2" />
+                      <div className="flex items-center gap-3">
+                        <Progress value={progress} className="h-2 flex-1" />
+                        {isCompleted && (
+                          <Badge className="bg-success text-success-foreground whitespace-nowrap">Completed</Badge>
+                        )}
+                      </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span>
                           {progressData[enrollment.program.id]?.completed || 0} /{' '}
                           {progressData[enrollment.program.id]?.total || 0} lessons
                         </span>
+                        {!isCompleted && <span>{progress}%</span>}
                       </div>
                       <Button asChild className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                         <Link to={`/programs/${enrollment.program.id}`}>
