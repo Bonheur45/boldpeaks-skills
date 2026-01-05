@@ -225,19 +225,21 @@ export default function ProgramDetail() {
               {program.description}
             </p>
             <div className="flex items-center gap-4">
-              <div className="flex-1 max-w-md">
+              <div className="flex-1">
                 <div className="flex items-center justify-between text-sm text-primary-foreground/80 mb-2">
                   <span>Overall Progress</span>
                   <span>{overallProgress}%</span>
                 </div>
-                <Progress value={overallProgress} className="h-2 bg-primary-foreground/20" />
+                <div className="flex items-center gap-4">
+                  <Progress value={overallProgress} className="h-2 bg-primary-foreground/20 flex-1" />
+                  {overallProgress === 100 && (
+                    <Badge className="bg-success text-success-foreground gap-1 whitespace-nowrap">
+                      <Trophy className="h-3 w-3" />
+                      Completed
+                    </Badge>
+                  )}
+                </div>
               </div>
-              {overallProgress === 100 && (
-                <Badge className="bg-success text-success-foreground gap-1">
-                  <Trophy className="h-3 w-3" />
-                  Completed
-                </Badge>
-              )}
             </div>
           </div>
         </div>
