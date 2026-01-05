@@ -224,11 +224,16 @@ export default function ProgramDetail() {
             <p className="text-primary-foreground/80 max-w-2xl mb-6">
               {program.description}
             </p>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-sm text-primary-foreground/80 mb-2">
-                  <span>Overall Progress</span>
-                  <span>{overallProgress}%</span>
+            <div className="w-full">
+              <div className="flex items-center justify-between text-sm text-primary-foreground/80 mb-2">
+                <span>Overall Progress</span>
+              </div>
+              <div className="relative">
+                <div 
+                  className="absolute -top-6 text-sm font-medium text-primary-foreground"
+                  style={{ left: `${overallProgress}%`, transform: 'translateX(-50%)' }}
+                >
+                  {overallProgress}%
                 </div>
                 <div className="flex items-center gap-4">
                   <Progress value={overallProgress} className="h-2 bg-primary-foreground/20 flex-1" />
