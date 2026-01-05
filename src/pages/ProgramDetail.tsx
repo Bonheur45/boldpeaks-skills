@@ -280,7 +280,7 @@ export default function ProgramDetail() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4 pt-6">
-                      <div className="space-y-5">
+                      <div className="space-y-5 max-w-3xl mx-auto">
                         {groupLessons.map((lesson) => (
                           <LessonCard
                             key={lesson.id}
@@ -300,7 +300,7 @@ export default function ProgramDetail() {
                   <CardHeader>
                     <CardTitle>Additional Lessons</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 max-w-3xl mx-auto">
                     {ungroupedLessons.map((lesson) => (
                       <LessonCard
                         key={lesson.id}
@@ -314,7 +314,7 @@ export default function ProgramDetail() {
               )}
             </Accordion>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-w-3xl mx-auto">
               {lessons.map((lesson) => (
                 <LessonCard
                   key={lesson.id}
