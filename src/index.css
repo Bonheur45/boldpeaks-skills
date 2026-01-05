@@ -72,8 +72,8 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* Typography */
-    --font-heading: 'Space Grotesk', sans-serif;
+    /* Typography - unified sans-serif */
+    --font-heading: 'DM Sans', sans-serif;
     --font-body: 'DM Sans', sans-serif;
   }
 
