@@ -118,34 +118,24 @@ export default function AssessmentPage() {
 
     setIsSubmitting(true);
     try {
-      // Calculate score using server-side grading function for security
+      // Calculate score for auto-graded questions
       let score = 0;
       let maxScore = 0;
 
-      const gradingPromises = questions.map(async (q) => {
-        maxScore += q.points || 0;
-        
+      questions.forEach((q) => {
+        maxScore += q.points;
         if (q.question_type !== 'essay') {
+          const correctAnswer = (q as any).correct_answer;
           const userAnswer = answers[q.id];
           
-          if (userAnswer && typeof userAnswer === 'string') {
-            // Use the secure server-side grading function
-            const { data: isCorrect, error } = await supabase
-              .rpc('grade_assessment_answer', {
-                p_question_id: q.id,
-                p_user_answer: userAnswer
-              });
-            
-            if (!error && isCorrect) {
-              return q.points || 0;
-            }
+          if (q.question_type === 'multiple_choice' && userAnswer === correctAnswer) {
+            score += q.points;
+          }
+          if (q.question_type === 'true_false' && userAnswer === correctAnswer) {
+            score += q.points;
           }
         }
-        return 0;
       });
-
-      const pointsArray = await Promise.all(gradingPromises);
-      score = pointsArray.reduce((sum, pts) => sum + pts, 0);
 
       const hasEssay = questions.some((q) => q.question_type === 'essay');
 
