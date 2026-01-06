@@ -206,7 +206,7 @@ export default function ProgramDetail() {
         </Button>
 
         {/* Program Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/70 lg:max-w-[75%]">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/70 lg:max-w-[75%] lg:mx-auto">
           {program.cover_image && (
             <img
               src={program.cover_image}
@@ -254,7 +254,7 @@ export default function ProgramDetail() {
           <h2 className="text-xl font-heading font-semibold">Course Content</h2>
 
           {groupings.length > 0 ? (
-            <Accordion type="multiple" defaultValue={groupings.map((g) => g.id)} className="space-y-4 lg:max-w-[75%]">
+            <Accordion type="multiple" defaultValue={groupings.map((g) => g.id)} className="space-y-4 lg:max-w-[75%] lg:mx-auto">
               {groupings.map((grouping) => {
                 const groupLessons = getLessonsForGrouping(grouping.id);
                 const completedInGroup = groupLessons.filter((l) => isLessonCompleted(l.id)).length;
