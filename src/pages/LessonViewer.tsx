@@ -106,9 +106,9 @@ export default function LessonViewer() {
 
       setGroupings(groupingsData || []);
 
-      // Fetch content blocks
+      // Fetch content blocks (using secure view that strips quiz answers)
       const { data: blocksData } = await supabase
-        .from('content_blocks')
+        .from('content_blocks_student')
         .select('*')
         .eq('lesson_id', lessonId)
         .order('sort_order');

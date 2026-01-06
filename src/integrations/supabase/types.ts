@@ -694,13 +694,113 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      assessment_questions_student: {
+        Row: {
+          assessment_id: string | null
+          created_at: string | null
+          display_order: number | null
+          id: string | null
+          options: Json | null
+          points: number | null
+          question: string | null
+          question_text: string | null
+          question_type: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          assessment_id?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string | null
+          options?: Json | null
+          points?: number | null
+          question?: string | null
+          question_text?: string | null
+          question_type?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          assessment_id?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string | null
+          options?: Json | null
+          points?: number | null
+          question?: string | null
+          question_text?: string | null
+          question_type?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_blocks_student: {
+        Row: {
+          block_type: string | null
+          content: Json | null
+          created_at: string | null
+          id: string | null
+          lesson_id: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          block_type?: string | null
+          content?: never
+          created_at?: string | null
+          id?: string | null
+          lesson_id?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          block_type?: string | null
+          content?: never
+          created_at?: string | null
+          id?: string | null
+          lesson_id?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_blocks_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      grade_assessment_answer: {
+        Args: { p_question_id: string; p_user_answer: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      strip_quiz_answers: {
+        Args: { block_type: string; content: Json }
+        Returns: Json
+      }
+      validate_quiz_answer: {
+        Args: {
+          p_block_id: string
+          p_question_id: string
+          p_selected_option_id: string
         }
         Returns: boolean
       }

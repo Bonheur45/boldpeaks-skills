@@ -35,11 +35,12 @@ interface Assessment {
 
 interface Question {
   id: string;
-  question_text: string;
-  question_type: string;
+  question_text: string | null;
+  question: string;
+  question_type: string | null;
   options: any;
-  correct_answer: string | null;
-  points: number;
+  correct_answer?: string | null; // Optional - not returned from secure view
+  points: number | null;
   sort_order: number;
 }
 
@@ -83,9 +84,9 @@ export default function AssessmentPage() {
       if (assessmentError) throw assessmentError;
       setAssessment(assessmentData as Assessment);
 
-      // Fetch questions
+      // Fetch questions (using secure view that hides correct answers)
       const { data: questionsData } = await supabase
-        .from('assessment_questions')
+        .from('assessment_questions_student')
         .select('*')
         .eq('assessment_id', assessmentData.id)
         .order('sort_order');
