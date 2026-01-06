@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Search, Trash2 } from 'lucide-react';
+import { Users, Search, Trash2, ShieldCheck, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,7 @@ interface Student {
   created_at: string;
   enrollments: { program_id: string; program_title: string }[];
   certificates_count: number;
+  isAdmin: boolean;
 }
 
 interface Program {
@@ -75,12 +76,19 @@ export default function AdminStudents() {
 
   const fetchData = async () => {
     try {
-      const [profilesRes, programsRes] = await Promise.all([
+      const [profilesRes, programsRes, rolesRes] = await Promise.all([
         supabase.from('profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('programs').select('id, title'),
+        supabase.from('user_roles').select('user_id, role'),
       ]);
 
       setPrograms(programsRes.data || []);
+
+      const adminUserIds = new Set(
+        (rolesRes.data || [])
+          .filter((r) => r.role === 'admin')
+          .map((r) => r.user_id)
+      );
 
       // Fetch enrollments and certificates for each student
       const studentsData = await Promise.all(
@@ -106,6 +114,7 @@ export default function AdminStudents() {
               program_title: e.program?.title || 'Unknown',
             })),
             certificates_count: certificatesRes.count || 0,
+            isAdmin: adminUserIds.has(profile.id),
           };
         })
       );
@@ -115,6 +124,43 @@ export default function AdminStudents() {
       console.error('Error fetching students:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleToggleAdmin = async (studentId: string, studentName: string, currentlyAdmin: boolean) => {
+    try {
+      if (currentlyAdmin) {
+        // Remove admin role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', studentId)
+          .eq('role', 'admin');
+        if (error) throw error;
+      } else {
+        // Add admin role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: studentId, role: 'admin' });
+        if (error) throw error;
+      }
+
+      // Update local state
+      setStudents(students.map(s => 
+        s.id === studentId ? { ...s, isAdmin: !currentlyAdmin } : s
+      ));
+
+      toast({
+        title: currentlyAdmin ? 'Admin removed' : 'Admin granted',
+        description: `${studentName} is ${currentlyAdmin ? 'no longer' : 'now'} an admin.`,
+      });
+    } catch (error) {
+      console.error('Error toggling admin:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update admin status. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -218,10 +264,11 @@ export default function AdminStudents() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Student</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Enrolled Programs</TableHead>
                     <TableHead>Certificates</TableHead>
                     <TableHead>Joined</TableHead>
-                    <TableHead className="w-[80px]">Actions</TableHead>
+                    <TableHead className="w-[120px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -241,6 +288,18 @@ export default function AdminStudents() {
                             <p className="text-sm text-muted-foreground">{student.email}</p>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {student.isAdmin ? (
+                          <Badge className="bg-primary/10 text-primary border-primary/20">
+                            <ShieldCheck className="h-3 w-3 mr-1" />
+                            Admin
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Student
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
@@ -269,30 +328,41 @@ export default function AdminStudents() {
                         {format(new Date(student.created_at), 'MMM d, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Student</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to remove {student.full_name || student.email}? This will delete their profile and all associated data. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteStudent(student.id, student.full_name || student.email)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant={student.isAdmin ? "outline" : "ghost"}
+                            size="icon"
+                            onClick={() => handleToggleAdmin(student.id, student.full_name || student.email, student.isAdmin)}
+                            title={student.isAdmin ? "Remove admin" : "Make admin"}
+                            className={student.isAdmin ? "text-primary" : "text-muted-foreground hover:text-primary"}
+                          >
+                            {student.isAdmin ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Student</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to remove {student.full_name || student.email}? This will delete their profile and all associated data. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteStudent(student.id, student.full_name || student.email)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
