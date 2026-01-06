@@ -16,8 +16,8 @@
 
 @layer base {
   :root {
-    /* Warm subtle off-white background */
-    --background: 30 10% 97%;
+    /* Warm subtle off-white background - more distinct from nav */
+    --background: 35 15% 94%;
     --foreground: 220 50% 12%;
 
     /* Cards stay brighter for contrast against background */
