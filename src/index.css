@@ -16,15 +16,15 @@
 
 @layer base {
   :root {
-    /* Warm dirty white background */
-    --background: 40 20% 97%;
+    /* Subtle off-white/gray background for better contrast with nav */
+    --background: 220 14% 94%;
     --foreground: 220 50% 12%;
 
-    /* Cards with subtle warmth */
-    --card: 40 25% 99%;
+    /* Cards stay brighter for contrast against background */
+    --card: 0 0% 100%;
     --card-foreground: 220 50% 12%;
 
-    --popover: 40 25% 99%;
+    --popover: 0 0% 100%;
     --popover-foreground: 220 50% 12%;
 
     /* Very deep blue primary */
