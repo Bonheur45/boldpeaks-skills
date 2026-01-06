@@ -203,10 +203,10 @@ export default function LessonViewer() {
       const moduleComplete = await checkModuleComplete(lesson);
 
       setIsCompleted(true);
+      setShowCelebration(true);
 
       if (moduleComplete) {
         setIsModuleComplete(true);
-        setShowCelebration(true);
 
         const grouping = groupings.find((g) => g.id === lesson.grouping_id);
         toast({
@@ -215,8 +215,8 @@ export default function LessonViewer() {
         });
       } else {
         toast({
-          title: 'Lesson completed!',
-          description: 'Great job! Keep up the good work.',
+          title: '🎉 Lesson Complete!',
+          description: "You're going far, keep it up!",
         });
       }
 
