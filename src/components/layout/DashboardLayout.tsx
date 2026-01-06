@@ -107,7 +107,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           {/* Logo */}
           <Link to={isInAdminArea ? '/admin' : '/dashboard'} className="flex items-center gap-2">
-            <img src={boldpeaksLogo} alt="BoldPeaks Hub" className="h-10 w-auto" />
+            <img src={boldpeaksLogo} alt="BoldPeaks Hub" className="h-12 w-auto" />
           </Link>
 
           {/* Desktop Navigation - Centered */}
@@ -199,7 +199,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </SheetTrigger>
               <SheetContent side="right" className="w-72 p-0">
                 <div className="p-6 border-b">
-                  <img src={boldpeaksLogo} alt="BoldPeaks Hub" className="h-10 w-auto" />
+                  <img src={boldpeaksLogo} alt="BoldPeaks Hub" className="h-12 w-auto" />
                 </div>
                 <MobileNav />
                 <div className="absolute bottom-4 left-4 right-4 space-y-2">
