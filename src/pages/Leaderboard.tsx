@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, Medal, Crown, TrendingUp, Zap } from 'lucide-react';
+import { Trophy, Medal, Crown, TrendingUp, Zap, Users, ChevronDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLeaderboardRealtime } from '@/hooks/useLeaderboardRealtime';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Program {
   id: string;
@@ -15,11 +16,13 @@ interface Program {
 }
 
 export default function Leaderboard() {
+  const { user } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<string>('');
   const [isLoadingPrograms, setIsLoadingPrograms] = useState(true);
+  const [displayCount, setDisplayCount] = useState(10);
 
-  const { rankings, isLoading, userRank, refresh } = useLeaderboardRealtime(selectedProgram, undefined);
+  const { rankings, isLoading, userRank, refresh } = useLeaderboardRealtime(selectedProgram, user?.id);
 
   useEffect(() => {
     fetchPrograms();
@@ -35,10 +38,15 @@ export default function Leaderboard() {
 
       if (error) throw error;
 
-      const uniquePrograms = (data || [])
-        .map((e: any) => e.programs)
-        .filter((p: Program | null): p is Program => p !== null);
-
+      // Get unique programs
+      const programMap = new Map<string, Program>();
+      (data || []).forEach((e: any) => {
+        if (e.programs && !programMap.has(e.programs.id)) {
+          programMap.set(e.programs.id, e.programs);
+        }
+      });
+      
+      const uniquePrograms = Array.from(programMap.values());
       setPrograms(uniquePrograms);
       if (uniquePrograms.length > 0) {
         setSelectedProgram(uniquePrograms[0].id);
@@ -75,7 +83,10 @@ export default function Leaderboard() {
     }
   };
 
-  const getRankBackground = (position: number) => {
+  const getRankBackground = (position: number, isCurrentUser: boolean) => {
+    if (isCurrentUser) {
+      return 'bg-primary/10 border-primary/30 ring-2 ring-primary/20';
+    }
     switch (position) {
       case 1:
         return 'bg-gradient-to-r from-yellow-500/10 to-yellow-600/5 border-yellow-500/20';
@@ -85,6 +96,17 @@ export default function Leaderboard() {
         return 'bg-gradient-to-r from-amber-600/10 to-amber-700/5 border-amber-600/20';
       default:
         return '';
+    }
+  };
+
+  const displayedRankings = rankings.slice(0, displayCount);
+  const hasMore = rankings.length > displayCount;
+
+  const handleShowMore = () => {
+    if (displayCount === 10) {
+      setDisplayCount(50);
+    } else {
+      setDisplayCount(rankings.length);
     }
   };
 
@@ -105,7 +127,10 @@ export default function Leaderboard() {
           </div>
 
           {programs.length > 0 && (
-            <Select value={selectedProgram} onValueChange={setSelectedProgram}>
+            <Select value={selectedProgram} onValueChange={(value) => {
+              setSelectedProgram(value);
+              setDisplayCount(10); // Reset display count when changing program
+            }}>
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Select a program" />
               </SelectTrigger>
@@ -129,7 +154,7 @@ export default function Leaderboard() {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground">Your Current Rank</p>
-                <p className="text-2xl font-bold">#{userRank.rank_position}</p>
+                <p className="text-2xl font-bold">#{userRank.rank_position} of {rankings.length}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Score</p>
@@ -146,7 +171,10 @@ export default function Leaderboard() {
         {/* Rankings List */}
         <Card className="card-elevated">
           <CardHeader>
-            <CardTitle>Top Students</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Top Students
+            </CardTitle>
             <CardDescription>
               Rankings update in real-time based on lesson completions and assessment scores
             </CardDescription>
@@ -168,19 +196,28 @@ export default function Leaderboard() {
             ) : rankings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No rankings yet</h3>
+                <h3 className="text-lg font-medium mb-2">No students enrolled yet</h3>
                 <p className="text-muted-foreground text-center">
-                  Complete lessons to appear on the leaderboard.
+                  Students will appear here once they enroll in this program.
+                </p>
+              </div>
+            ) : rankings.length === 1 && rankings[0].user_id === user?.id ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">You are currently the only student in this program</h3>
+                <p className="text-muted-foreground text-center">
+                  Other students will appear here as they enroll.
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {rankings.map((entry) => {
+                {displayedRankings.map((entry) => {
+                  const isCurrentUser = entry.user_id === user?.id;
                   return (
                     <div
                       key={entry.user_id}
                       className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
-                        getRankBackground(entry.rank_position) || 'hover:bg-muted/50'
+                        getRankBackground(entry.rank_position, isCurrentUser) || 'hover:bg-muted/50'
                       }`}
                     >
                       <div className="w-12 flex justify-center">
@@ -196,10 +233,15 @@ export default function Leaderboard() {
 
                       <div className="flex-1">
                         <p className="font-medium flex items-center gap-2">
-                          {entry.profile?.full_name || `Student ${entry.user_id.slice(0, 6)}`}
+                          {entry.profile?.full_name || `Student`}
+                          {isCurrentUser && (
+                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                              You
+                            </span>
+                          )}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {entry.lessons_completed} lessons completed
+                          {entry.lessons_completed} lesson{entry.lessons_completed !== 1 ? 's' : ''} completed
                         </p>
                       </div>
 
@@ -209,6 +251,20 @@ export default function Leaderboard() {
                     </div>
                   );
                 })}
+
+                {/* Show More Button */}
+                {hasMore && (
+                  <div className="pt-4 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleShowMore}
+                      className="flex items-center gap-2"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                      Show {displayCount === 10 ? 'Top 50' : 'All'} ({rankings.length} total)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
