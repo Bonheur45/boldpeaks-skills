@@ -112,7 +112,7 @@ export default function Leaderboard() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 space-y-8">
+      <div className="p-6 lg:p-8 space-y-8 w-full lg:w-[80%] mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-2">
