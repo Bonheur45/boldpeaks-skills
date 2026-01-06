@@ -251,7 +251,7 @@ export default function ProgramDetail() {
 
         {/* Lessons */}
         <div className="space-y-6">
-          <h2 className="text-xl font-heading font-semibold">Course Content</h2>
+          <h2 className="text-xl font-heading font-semibold lg:max-w-[75%] lg:mx-auto">Course Content</h2>
 
           {groupings.length > 0 ? (
             <Accordion type="multiple" defaultValue={groupings.map((g) => g.id)} className="space-y-4 lg:max-w-[75%] lg:mx-auto">
