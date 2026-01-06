@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -20,7 +20,9 @@ interface QuizQuestion {
   id: string;
   question: string;
   options: { id: string; text: string }[];
-  correctOptionId: string;
+  // NOTE: correctOptionId is intentionally stripped from the student-facing view,
+  // so we do NOT rely on it client-side for grading.
+  correctOptionId?: string;
   explanation: string;
   points: number;
 }
@@ -40,38 +42,37 @@ interface QuizProgress {
   lessonId: string;
   blockId: string;
   answers: Record<string, string>;
+  results: Record<string, boolean>;
   score: number;
   maxScore: number;
   completedAt: string;
 }
 
-export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockProps) {
+export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
   const { toast } = useToast();
   const questions = content?.questions || [];
-  
+
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<Record<string, boolean>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [maxScore, setMaxScore] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousResult, setPreviousResult] = useState<QuizProgress | null>(null);
 
-  // Check for previous quiz attempt stored in localStorage
   useEffect(() => {
-    const checkPreviousAttempt = async () => {
-      // Quiz progress is stored in a simple format in localStorage
-      const stored = localStorage.getItem(`quiz-${blockId}`);
-      if (stored) {
-        const parsed = JSON.parse(stored) as QuizProgress;
-        setPreviousResult(parsed);
-        setAnswers(parsed.answers);
-        setScore(parsed.score);
-        setMaxScore(parsed.maxScore);
-        setIsSubmitted(true);
-      }
-    };
-    
-    checkPreviousAttempt();
+    const stored = localStorage.getItem(`quiz-${blockId}`);
+    if (!stored) return;
+
+    const parsed = JSON.parse(stored) as Partial<QuizProgress>;
+    if (!parsed.answers || typeof parsed.score !== 'number' || typeof parsed.maxScore !== 'number') return;
+
+    setPreviousResult(parsed as QuizProgress);
+    setAnswers(parsed.answers);
+    setResults(parsed.results || {});
+    setScore(parsed.score);
+    setMaxScore(parsed.maxScore);
+    setIsSubmitted(true);
   }, [blockId, lessonId]);
 
   if (questions.length === 0) {
@@ -90,51 +91,85 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
   };
 
-  const calculateScore = () => {
-    let totalScore = 0;
-    let totalMax = 0;
-    
-    questions.forEach((q) => {
-      totalMax += q.points;
-      if (answers[q.id] === q.correctOptionId) {
-        totalScore += q.points;
-      }
-    });
-    
-    return { score: totalScore, maxScore: totalMax };
-  };
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const { score: finalScore, maxScore: finalMax } = calculateScore();
-    
-    setScore(finalScore);
-    setMaxScore(finalMax);
-    setIsSubmitted(true);
 
-    // Store quiz result locally
-    const quizProgress: QuizProgress = {
-      lessonId,
-      blockId,
-      answers,
-      score: finalScore,
-      maxScore: finalMax,
-      completedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(`quiz-${blockId}`, JSON.stringify(quizProgress));
+    try {
+      // IMPORTANT: In the student-facing lesson view, quiz correct answers are stripped.
+      // So we grade server-side via validate_quiz_answer().
+      const grading = await Promise.all(
+        questions.map(async (q) => {
+          const selectedOptionId = answers[q.id];
+          const max = q.points;
 
-    const percentage = Math.round((finalScore / finalMax) * 100);
-    toast({
-      title: 'Quiz submitted!',
-      description: `You scored ${finalScore}/${finalMax} (${percentage}%)`,
-    });
-    
-    setIsSubmitting(false);
+          if (!selectedOptionId) {
+            return { questionId: q.id, isCorrect: false, points: 0, max };
+          }
+
+          const { data: isCorrect, error } = await supabase.rpc('validate_quiz_answer', {
+            p_block_id: blockId,
+            p_question_id: q.id,
+            p_selected_option_id: selectedOptionId,
+          });
+
+          if (error) throw error;
+
+          return {
+            questionId: q.id,
+            isCorrect: !!isCorrect,
+            points: isCorrect ? q.points : 0,
+            max,
+          };
+        })
+      );
+
+      const newResults: Record<string, boolean> = {};
+      let totalScore = 0;
+      let totalMax = 0;
+
+      grading.forEach((r) => {
+        newResults[r.questionId] = r.isCorrect;
+        totalScore += r.points;
+        totalMax += r.max;
+      });
+
+      setResults(newResults);
+      setScore(totalScore);
+      setMaxScore(totalMax);
+      setIsSubmitted(true);
+
+      const quizProgress: QuizProgress = {
+        lessonId,
+        blockId,
+        answers,
+        results: newResults,
+        score: totalScore,
+        maxScore: totalMax,
+        completedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(`quiz-${blockId}`, JSON.stringify(quizProgress));
+
+      const percentage = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+      toast({
+        title: 'Quiz submitted!',
+        description: `You scored ${totalScore}/${totalMax} (${percentage}%)`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Quiz submission failed',
+        description: error?.message || 'Please try again.',
+      });
+      setIsSubmitted(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRetry = () => {
     localStorage.removeItem(`quiz-${blockId}`);
     setAnswers({});
+    setResults({});
     setIsSubmitted(false);
     setScore(0);
     setMaxScore(0);
@@ -173,7 +208,9 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
       {!isSubmitted && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span>{answeredCount} of {questions.length} answered</span>
+            <span>
+              {answeredCount} of {questions.length} answered
+            </span>
             <span>{Math.round((answeredCount / questions.length) * 100)}%</span>
           </div>
           <Progress value={(answeredCount / questions.length) * 100} className="h-2" />
@@ -191,16 +228,16 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
                 <XCircle className="h-8 w-8 text-warning" />
               )}
               <div>
-                <p className="font-semibold">
-                  {passed ? 'Great job!' : 'Keep practicing!'}
-                </p>
+                <p className="font-semibold">{passed ? 'Great job!' : 'Keep practicing!'}</p>
                 <p className="text-sm text-muted-foreground">
                   {passed ? 'You passed the quiz' : 'Review your answers below'}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">{score}/{maxScore}</p>
+              <p className="text-2xl font-bold">
+                {score}/{maxScore}
+              </p>
               <p className="text-sm text-muted-foreground">{scorePercentage}%</p>
             </div>
           </CardContent>
@@ -211,14 +248,11 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
       <div className="space-y-4">
         {questions.map((question, idx) => {
           const userAnswer = answers[question.id];
-          const isCorrect = userAnswer === question.correctOptionId;
+          const isCorrect = results[question.id] === true;
           const showResult = isSubmitted;
 
           return (
-            <Card 
-              key={question.id} 
-              className={showResult ? (isCorrect ? 'border-success' : 'border-destructive') : ''}
-            >
+            <Card key={question.id} className={showResult ? (isCorrect ? 'border-success' : 'border-destructive') : ''}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -239,53 +273,32 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
                         )
                       )}
                     </div>
-                    <CardTitle className="text-base font-medium">
-                      {question.question}
-                    </CardTitle>
+                    <CardTitle className="text-base font-medium">{question.question}</CardTitle>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <RadioGroup
-                  value={userAnswer || ''}
-                  onValueChange={(value) => handleAnswerChange(question.id, value)}
-                  disabled={isSubmitted}
-                >
+                <RadioGroup value={userAnswer || ''} onValueChange={(value) => handleAnswerChange(question.id, value)} disabled={isSubmitted}>
                   {question.options.map((option) => {
-                    const isThisCorrect = option.id === question.correctOptionId;
                     const isThisSelected = userAnswer === option.id;
-                    
+
                     let optionClass = 'border hover:bg-muted/50';
-                    if (showResult) {
-                      if (isThisCorrect) {
-                        optionClass = 'border-success bg-success/10';
-                      } else if (isThisSelected && !isThisCorrect) {
-                        optionClass = 'border-destructive bg-destructive/10';
-                      }
-                    } else if (isThisSelected) {
+                    if (showResult && isThisSelected) {
+                      optionClass = isCorrect ? 'border-success bg-success/10' : 'border-destructive bg-destructive/10';
+                    } else if (!showResult && isThisSelected) {
                       optionClass = 'border-primary bg-primary/5';
                     }
 
                     return (
-                      <div
-                        key={option.id}
-                        className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${optionClass}`}
-                      >
-                        <RadioGroupItem 
-                          value={option.id} 
-                          id={`${question.id}-${option.id}`}
-                          disabled={isSubmitted}
-                        />
-                        <Label 
-                          htmlFor={`${question.id}-${option.id}`} 
-                          className="flex-1 cursor-pointer"
-                        >
+                      <div key={option.id} className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${optionClass}`}>
+                        <RadioGroupItem value={option.id} id={`${question.id}-${option.id}`} disabled={isSubmitted} />
+                        <Label htmlFor={`${question.id}-${option.id}`} className="flex-1 cursor-pointer">
                           {option.text}
                         </Label>
-                        {showResult && isThisCorrect && (
+                        {showResult && isThisSelected && isCorrect && (
                           <CheckCircle2 className="h-5 w-5 text-success" />
                         )}
-                        {showResult && isThisSelected && !isThisCorrect && (
+                        {showResult && isThisSelected && !isCorrect && (
                           <XCircle className="h-5 w-5 text-destructive" />
                         )}
                       </div>
@@ -313,16 +326,12 @@ export function QuizBlock({ blockId, content, lessonId, programId }: QuizBlockPr
             <div>
               <p className="font-semibold">Ready to submit?</p>
               <p className="text-sm text-muted-foreground">
-                {allAnswered 
+                {allAnswered
                   ? 'All questions answered'
                   : `${questions.length - answeredCount} question${questions.length - answeredCount !== 1 ? 's' : ''} remaining`}
               </p>
             </div>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={!allAnswered || isSubmitting}
-              size="lg"
-            >
+            <Button onClick={handleSubmit} disabled={!allAnswered || isSubmitting} size="lg">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
