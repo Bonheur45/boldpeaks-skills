@@ -406,6 +406,7 @@ export type Database = {
         Row: {
           id: string
           lessons_completed: number | null
+          program_id: string | null
           programs_completed: number | null
           total_points: number | null
           updated_at: string
@@ -414,6 +415,7 @@ export type Database = {
         Insert: {
           id?: string
           lessons_completed?: number | null
+          program_id?: string | null
           programs_completed?: number | null
           total_points?: number | null
           updated_at?: string
@@ -422,12 +424,21 @@ export type Database = {
         Update: {
           id?: string
           lessons_completed?: number | null
+          program_id?: string | null
           programs_completed?: number | null
           total_points?: number | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       learning_pathways: {
         Row: {
