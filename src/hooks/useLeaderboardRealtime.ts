@@ -5,6 +5,7 @@ interface LeaderboardEntry {
   user_id: string;
   total_score: number;
   lessons_completed: number;
+  rank_position: number;
   profile: {
     full_name: string | null;
     avatar_url: string | null;
@@ -15,12 +16,13 @@ export function useLeaderboardRealtime(programId: string, userId?: string) {
   const [rankings, setRankings] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAndCalculateRankings = useCallback(async () => {
+  const fetchRankings = useCallback(async () => {
     if (!programId) return;
     
     setIsLoading(true);
     try {
-      // Get all enrollments for the program
+      // Get leaderboard entries for enrolled users in this program
+      // The leaderboard table is publicly readable, so all users can see rankings
       const { data: enrollments, error: enrollError } = await supabase
         .from('enrollments')
         .select('user_id')
@@ -31,88 +33,74 @@ export function useLeaderboardRealtime(programId: string, userId?: string) {
 
       if (!enrollments || enrollments.length === 0) {
         setRankings([]);
+        setIsLoading(false);
         return;
       }
 
       const userIds = enrollments.map(e => e.user_id);
 
-      // Get lesson progress for all enrolled users
-      const { data: lessons } = await supabase
-        .from('lessons')
-        .select('id')
-        .eq('program_id', programId)
-        .eq('is_published', true);
-
-      const lessonIds = lessons?.map(l => l.id) || [];
-
-      // Get all progress entries
-      const { data: progressData } = await supabase
-        .from('lesson_progress')
-        .select('user_id, lesson_id, completed_at')
-        .in('user_id', userIds)
-        .in('lesson_id', lessonIds)
-        .not('completed_at', 'is', null);
-
-      // Get assessment scores
-      const { data: assessmentData } = await supabase
-        .from('assessment_submissions')
+      // Get leaderboard data - this table is publicly readable
+      const { data: leaderboardData, error: leaderboardError } = await supabase
+        .from('leaderboard')
         .select(`
           user_id,
-          score
+          total_points,
+          lessons_completed,
+          profiles!leaderboard_user_id_fkey(full_name, avatar_url)
         `)
         .in('user_id', userIds)
-        .not('score', 'is', null);
+        .order('total_points', { ascending: false });
 
-      // Get profiles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
+      if (leaderboardError) {
+        // Fallback: query without the join if foreign key doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('leaderboard')
+          .select('user_id, total_points, lessons_completed')
+          .in('user_id', userIds)
+          .order('total_points', { ascending: false });
 
-      // Calculate scores for each user
-      const userScores: Map<string, { score: number; lessons: number }> = new Map();
+        if (fallbackError) throw fallbackError;
 
-      // Count completed lessons
-      progressData?.forEach(p => {
-        const current = userScores.get(p.user_id) || { score: 0, lessons: 0 };
-        current.lessons += 1;
-        current.score += 10; // 10 points per lesson completion
-        userScores.set(p.user_id, current);
-      });
+        // Get profiles separately
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds);
 
-      // Add assessment scores
-      assessmentData?.forEach((s: any) => {
-        const current = userScores.get(s.user_id) || { score: 0, lessons: 0 };
-        current.score += (s.score || 0);
-        userScores.set(s.user_id, current);
-      });
+        const rankingsData: LeaderboardEntry[] = (fallbackData || [])
+          .filter(entry => entry.total_points > 0 || entry.lessons_completed > 0)
+          .map((entry, index) => {
+            const profile = profiles?.find(p => p.id === entry.user_id);
+            return {
+              user_id: entry.user_id,
+              total_score: entry.total_points || 0,
+              lessons_completed: entry.lessons_completed || 0,
+              rank_position: index + 1,
+              profile: profile ? {
+                full_name: profile.full_name,
+                avatar_url: profile.avatar_url,
+              } : null,
+            };
+          });
 
-      // Build rankings - only include users with actual progress
-      const rankingsData: LeaderboardEntry[] = userIds
-        .filter(userId => {
-          const scores = userScores.get(userId);
-          return scores && (scores.score > 0 || scores.lessons > 0);
-        })
-        .map(userId => {
-          const profile = profiles?.find(p => p.id === userId);
-          const scores = userScores.get(userId) || { score: 0, lessons: 0 };
-          
-          return {
-            user_id: userId,
-            total_score: scores.score,
-            lessons_completed: scores.lessons,
-            profile: profile ? {
-              full_name: profile.full_name,
-              avatar_url: profile.avatar_url,
-            } : null,
-          };
-        });
+        setRankings(rankingsData);
+        setIsLoading(false);
+        return;
+      }
 
-      // Sort by score, then by lessons completed
-      rankingsData.sort((a, b) => {
-        if (b.total_score !== a.total_score) return b.total_score - a.total_score;
-        return b.lessons_completed - a.lessons_completed;
-      });
+      // Process leaderboard data with joined profiles
+      const rankingsData: LeaderboardEntry[] = (leaderboardData || [])
+        .filter(entry => (entry.total_points || 0) > 0 || (entry.lessons_completed || 0) > 0)
+        .map((entry: any, index) => ({
+          user_id: entry.user_id,
+          total_score: entry.total_points || 0,
+          lessons_completed: entry.lessons_completed || 0,
+          rank_position: index + 1,
+          profile: entry.profiles ? {
+            full_name: entry.profiles.full_name,
+            avatar_url: entry.profiles.avatar_url,
+          } : null,
+        }));
 
       setRankings(rankingsData);
     } catch (error) {
@@ -123,60 +111,40 @@ export function useLeaderboardRealtime(programId: string, userId?: string) {
   }, [programId]);
 
   useEffect(() => {
-    fetchAndCalculateRankings();
+    fetchRankings();
 
-    // Subscribe to lesson_progress changes
-    const progressChannel = supabase
-      .channel('leaderboard-progress')
+    // Subscribe to leaderboard changes for real-time updates
+    const leaderboardChannel = supabase
+      .channel('leaderboard-updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'lesson_progress',
+          table: 'leaderboard',
         },
         () => {
-          fetchAndCalculateRankings();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to assessment_submissions changes
-    const assessmentChannel = supabase
-      .channel('leaderboard-assessments')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'assessment_submissions',
-        },
-        () => {
-          fetchAndCalculateRankings();
+          fetchRankings();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(progressChannel);
-      supabase.removeChannel(assessmentChannel);
+      supabase.removeChannel(leaderboardChannel);
     };
-  }, [fetchAndCalculateRankings]);
+  }, [fetchRankings]);
 
   const getUserRank = useCallback(() => {
     if (!userId) return null;
-    const index = rankings.findIndex(r => r.user_id === userId);
-    if (index === -1) return null;
-    return {
-      ...rankings[index],
-      rank_position: index + 1,
-    };
+    const entry = rankings.find(r => r.user_id === userId);
+    if (!entry) return null;
+    return entry;
   }, [rankings, userId]);
 
   return {
-    rankings: rankings.map((r, i) => ({ ...r, rank_position: i + 1 })),
+    rankings,
     isLoading,
     userRank: getUserRank(),
-    refresh: fetchAndCalculateRankings,
+    refresh: fetchRankings,
   };
 }
