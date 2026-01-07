@@ -67,10 +67,10 @@ export default function AssessmentPage() {
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
-    if (lessonId) {
+    if (lessonId && user) {
       fetchAssessmentData();
     }
-  }, [lessonId]);
+  }, [lessonId, user]);
 
   const fetchAssessmentData = async () => {
     try {
@@ -93,11 +93,13 @@ export default function AssessmentPage() {
 
       setQuestions(questionsData || []);
 
-      // Check for previous submission in localStorage
-      const storedSubmission = localStorage.getItem(`assessment-${assessmentData.id}`);
-      if (storedSubmission) {
-        setPreviousSubmission(JSON.parse(storedSubmission));
-        setShowResults(true);
+      // Check for previous submission in localStorage (user-specific key)
+      if (user?.id) {
+        const storedSubmission = localStorage.getItem(`assessment-${assessmentData.id}-${user.id}`);
+        if (storedSubmission) {
+          setPreviousSubmission(JSON.parse(storedSubmission));
+          setShowResults(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching assessment:', error);
@@ -149,7 +151,7 @@ export default function AssessmentPage() {
 
       const hasEssay = questions.some((q) => q.question_type === 'essay');
 
-      // Store submission in localStorage
+      // Store submission in localStorage (user-specific key)
       const submission: Submission = {
         id: crypto.randomUUID(),
         score: hasEssay ? null : score,
@@ -157,7 +159,9 @@ export default function AssessmentPage() {
         submitted_at: new Date().toISOString(),
       };
       
-      localStorage.setItem(`assessment-${assessment.id}`, JSON.stringify(submission));
+      if (user?.id) {
+        localStorage.setItem(`assessment-${assessment.id}-${user.id}`, JSON.stringify(submission));
+      }
 
        // Mark lesson as complete (local + backend)
        localStorage.setItem(`lesson-complete-${lessonId}`, 'true');
@@ -341,6 +345,10 @@ export default function AssessmentPage() {
                   <Button 
                     variant="outline"
                     onClick={() => {
+                      // Clear user-specific localStorage entry
+                      if (user?.id && assessment?.id) {
+                        localStorage.removeItem(`assessment-${assessment.id}-${user.id}`);
+                      }
                       setShowResults(false);
                       setPreviousSubmission(null);
                       setAnswers({});
