@@ -157,25 +157,50 @@ export default function LessonViewer() {
     }
   };
 
-  const checkModuleComplete = async (currentLesson: Lesson) => {
+  const checkModuleComplete = async (params: { currentLesson: Lesson; userId: string }) => {
+    const { currentLesson, userId } = params;
+
+    if (!programId) return false;
     if (!currentLesson.grouping_id) return false;
 
-    // Get all lessons in this grouping/module
-    const moduleLessons = allLessons.filter(l => l.grouping_id === currentLesson.grouping_id);
-    
-    // Check localStorage for completed lessons
-    const completedIds = new Set<string>();
-    moduleLessons.forEach(l => {
-      if (localStorage.getItem(`lesson-complete-${l.id}`) === 'true') {
-        completedIds.add(l.id);
-      }
-    });
-    
-    // Add the current lesson as it's about to be completed
+    // Prefer the already-fetched lesson list, but fall back to DB for reliability across devices/sessions.
+    let moduleLessonIds = allLessons
+      .filter((l) => l.grouping_id === currentLesson.grouping_id)
+      .map((l) => l.id);
+
+    if (moduleLessonIds.length === 0) {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('id')
+        .eq('program_id', programId)
+        .eq('grouping_id', currentLesson.grouping_id)
+        .eq('is_published', true);
+
+      if (error) throw error;
+      moduleLessonIds = (data || []).map((r) => r.id);
+    }
+
+    // Safety: never treat "no lessons" as "module complete".
+    if (moduleLessonIds.length === 0) return false;
+
+    const { data: progressRows, error: progressError } = await supabase
+      .from('lesson_progress')
+      .select('lesson_id, completed')
+      .eq('user_id', userId)
+      .in('lesson_id', moduleLessonIds);
+
+    if (progressError) throw progressError;
+
+    const completedIds = new Set(
+      (progressRows || [])
+        .filter((r) => r.completed)
+        .map((r) => r.lesson_id)
+    );
+
+    // Include the current lesson we just marked complete.
     completedIds.add(currentLesson.id);
-    
-    // Check if all lessons in module are now complete
-    return moduleLessons.every(l => completedIds.has(l.id));
+
+    return moduleLessonIds.every((id) => completedIds.has(id));
   };
 
   const handleMarkComplete = async () => {
@@ -200,7 +225,10 @@ export default function LessonViewer() {
       await markLessonCompleted({ userId: user.id, lessonId: lesson.id });
 
       // Check if this completes the module
-      const moduleComplete = await checkModuleComplete(lesson);
+      const moduleComplete = await checkModuleComplete({
+        currentLesson: lesson,
+        userId: user.id,
+      });
 
       setIsCompleted(true);
 
@@ -211,7 +239,7 @@ export default function LessonViewer() {
         const grouping = groupings.find((g) => g.id === lesson.grouping_id);
         toast({
           title: '🎉 Module Complete!',
-          description: `You're going far, keep it up! You have completed "${grouping?.title || 'this module'}"!`,
+          description: `Congratulations! You have completed "${grouping?.title || 'this module'}"!`,
         });
       } else {
         toast({
