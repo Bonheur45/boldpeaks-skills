@@ -292,7 +292,7 @@ export default function Programs() {
                       <div className="flex-1 min-w-0">
                         <h2 className="text-xl font-semibold text-foreground">{pathway.title}</h2>
                         {pathway.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          <p className="text-sm text-muted-foreground mt-1 md:line-clamp-1">
                             {pathway.description}
                           </p>
                         )}
