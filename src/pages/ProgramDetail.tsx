@@ -229,14 +229,11 @@ export default function ProgramDetail() {
                 <span>Overall Progress</span>
               </div>
               <div className="flex items-center gap-4">
-                <div className="flex-1 relative">
-                  <div 
-                    className="absolute -top-5 text-sm font-medium text-primary-foreground"
-                    style={{ left: `${Math.max(overallProgress, 5)}%`, transform: 'translateX(-100%)' }}
-                  >
+                <div className="flex-1">
+                  <Progress value={overallProgress} className="h-2 bg-primary-foreground/20" />
+                  <div className="text-sm font-medium text-primary-foreground mt-2">
                     {overallProgress}%
                   </div>
-                  <Progress value={overallProgress} className="h-2 bg-primary-foreground/20" />
                 </div>
                 {overallProgress === 100 && (
                   <Badge className="bg-success text-success-foreground gap-1 whitespace-nowrap">
