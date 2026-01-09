@@ -60,6 +60,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/admin/students', label: 'Students', icon: Users },
     { href: '/admin/assessments', label: 'Assessments', icon: BookOpen },
     { href: '/admin/invites', label: 'Admin Invites', icon: UserCog },
+    { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   const navItems = isInAdminArea ? adminNavItems : studentNavItems;
