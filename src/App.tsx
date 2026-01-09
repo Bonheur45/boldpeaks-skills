@@ -26,6 +26,7 @@ import LessonEditor from "./pages/admin/LessonEditor";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminAssessments from "./pages/admin/AdminAssessments";
 import AdminInvites from "./pages/admin/AdminInvites";
+import AdminSettings from "./pages/admin/AdminSettings";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/admin/students" element={<AuthGuard><AdminGuard><AdminStudents /></AdminGuard></AuthGuard>} />
             <Route path="/admin/assessments" element={<AuthGuard><AdminGuard><AdminAssessments /></AdminGuard></AuthGuard>} />
             <Route path="/admin/invites" element={<AuthGuard><AdminGuard><AdminInvites /></AdminGuard></AuthGuard>} />
+            <Route path="/admin/settings" element={<AuthGuard><AdminGuard><AdminSettings /></AdminGuard></AuthGuard>} />
             <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
