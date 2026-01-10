@@ -63,8 +63,8 @@ export default function Certificates() {
                 className="gap-2"
                 onClick={() => window.open(ctaUrl, '_blank', 'noopener,noreferrer')}
               >
-                <ExternalLink className="h-5 w-5" />
-                Join the Mentorship Program to Earn Your Certificate
+                <ExternalLink className="h-4 w-4" />
+                Join Mentorship
               </Button>
             )}
           </CardContent>
