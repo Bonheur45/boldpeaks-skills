@@ -390,19 +390,19 @@ export default function LessonViewer() {
       
       <div className="p-6 lg:p-8 space-y-8 max-w-4xl mx-auto">
         {/* Navigation Header */}
-        <div className="flex items-center justify-between gap-4">
-          <Button variant="ghost" asChild className="gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <Button variant="ghost" asChild className="gap-2 self-start">
             <Link to={`/programs/${programId}`}>
               <ArrowLeft className="h-4 w-4" />
               Back to Course
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
               Lesson {getCurrentIndex() + 1} of {allLessons.length}
             </span>
             {isCompleted && (
-              <Badge className="bg-success text-success-foreground gap-1 font-body">
+              <Badge className="bg-success text-success-foreground gap-1 font-body shrink-0">
                 <CheckCircle2 className="h-3 w-3" />
                 Completed
               </Badge>
