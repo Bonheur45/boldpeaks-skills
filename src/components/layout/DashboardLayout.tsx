@@ -25,9 +25,9 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useUserRoles';
 import boldpeaksLogo from '@/assets/boldpeaks-logo.png';
+
+// TODO: Rebuild auth integration in DashboardLayout
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -37,13 +37,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut } = useAuth();
-  const { isAdmin: hasAdminRole, isLoading: rolesLoading } = useIsAdmin();
+
+  // TODO: Replace with actual auth state
+  const user = null;
+  const hasAdminRole = false;
+  const rolesLoading = false;
 
   const isInAdminArea = location.pathname.startsWith('/admin');
 
   const handleSignOut = async () => {
-    await signOut();
+    // TODO: Implement signOut
     navigate('/');
   };
 
@@ -144,7 +147,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   : 'bg-primary/10 text-primary border border-primary/20'
               )}
             >
-              {rolesLoading ? '...' : hasAdminRole ? 'Admin' : 'Student'}
+              {rolesLoading ? '...' : hasAdminRole ? 'Admin' : 'Guest'}
             </span>
 
             {/* Desktop User Menu */}
@@ -154,7 +157,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                      {getInitials(user?.user_metadata?.full_name, user?.email)}
+                      {getInitials(null, undefined)}
                     </AvatarFallback>
                   </Avatar>
                 </button>
@@ -162,9 +165,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span>{user?.user_metadata?.full_name || 'User'}</span>
+                    <span>Guest User</span>
                     <span className="text-xs font-normal text-muted-foreground truncate">
-                      {user?.email}
+                      Auth disabled
                     </span>
                   </div>
                 </DropdownMenuLabel>
@@ -208,12 +211,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={undefined} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {getInitials(user?.user_metadata?.full_name, user?.email)}
+                        {getInitials(null, undefined)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{user?.user_metadata?.full_name || 'User'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <p className="text-sm font-medium truncate">Guest User</p>
+                      <p className="text-xs text-muted-foreground truncate">Auth disabled</p>
                     </div>
                   </div>
                   <Button 

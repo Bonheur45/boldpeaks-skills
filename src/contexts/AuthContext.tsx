@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  Session,
+  User,
+  AuthChangeEvent,
+} from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+
+// TODO: Rebuild authentication - this is a stub after cleanup
 
 interface AuthContextType {
   user: User | null;
@@ -23,63 +29,52 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // TODO: Implement actual auth state management
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    const getSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    getSession();
+
+    supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      setUser(session?.user ?? null);
+      setSession(session);
+      setLoading(false);
+    });
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+  // TODO: Implement signIn with supabase.auth.signInWithPassword
+  const signIn = async (_email: string, _password: string) => {
+    console.warn('Auth disabled - signIn is a stub');
+    return { error: new Error('Authentication is disabled for rebuild') };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: { full_name: fullName }
-      }
-    });
-    return { error: error as Error | null };
+  // TODO: Implement signUp with supabase.auth.signUp
+  const signUp = async (_email: string, _password: string, _fullName: string) => {
+    console.warn('Auth disabled - signUp is a stub');
+    return { error: new Error('Authentication is disabled for rebuild') };
   };
 
+  // TODO: Implement signOut with supabase.auth.signOut
   const signOut = async () => {
-    // Clear state immediately to prevent re-authentication race conditions
-    setUser(null);
-    setSession(null);
-    
-    // Sign out from Supabase with global scope to clear all sessions
-    await supabase.auth.signOut({ scope: 'global' });
+    console.warn('Auth disabled - signOut is a stub');
   };
 
-  const resetPassword = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/auth?mode=reset`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl
-    });
-    return { error: error as Error | null };
+  // TODO: Implement resetPassword with supabase.auth.resetPasswordForEmail
+  const resetPassword = async (_email: string) => {
+    console.warn('Auth disabled - resetPassword is a stub');
+    return { error: new Error('Authentication is disabled for rebuild') };
   };
 
   return (
