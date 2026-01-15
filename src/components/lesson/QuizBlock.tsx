@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   CheckCircle2,
   XCircle,
@@ -20,8 +21,6 @@ interface QuizQuestion {
   id: string;
   question: string;
   options: { id: string; text: string }[];
-  // NOTE: correctOptionId is intentionally stripped from the student-facing view,
-  // so we do NOT rely on it client-side for grading.
   correctOptionId?: string;
   explanation: string;
   points: number;
@@ -50,6 +49,7 @@ interface QuizProgress {
 
 export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const questions = content?.questions || [];
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -61,7 +61,9 @@ export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
   const [previousResult, setPreviousResult] = useState<QuizProgress | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(`quiz-${blockId}`);
+    if (!user) return;
+    
+    const stored = localStorage.getItem(`quiz-${user.id}-${blockId}`);
     if (!stored) return;
 
     const parsed = JSON.parse(stored) as Partial<QuizProgress>;
@@ -73,7 +75,7 @@ export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
     setScore(parsed.score);
     setMaxScore(parsed.maxScore);
     setIsSubmitted(true);
-  }, [blockId, lessonId]);
+  }, [blockId, lessonId, user]);
 
   if (questions.length === 0) {
     return (
@@ -95,8 +97,6 @@ export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
     setIsSubmitting(true);
 
     try {
-      // IMPORTANT: In the student-facing lesson view, quiz correct answers are stripped.
-      // So we grade server-side via validate_quiz_answer().
       const grading = await Promise.all(
         questions.map(async (q) => {
           const selectedOptionId = answers[q.id];
@@ -147,7 +147,10 @@ export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
         maxScore: totalMax,
         completedAt: new Date().toISOString(),
       };
-      localStorage.setItem(`quiz-${blockId}`, JSON.stringify(quizProgress));
+      
+      if (user) {
+        localStorage.setItem(`quiz-${user.id}-${blockId}`, JSON.stringify(quizProgress));
+      }
 
       const percentage = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
       toast({
@@ -167,7 +170,9 @@ export function QuizBlock({ blockId, content, lessonId }: QuizBlockProps) {
   };
 
   const handleRetry = () => {
-    localStorage.removeItem(`quiz-${blockId}`);
+    if (user) {
+      localStorage.removeItem(`quiz-${user.id}-${blockId}`);
+    }
     setAnswers({});
     setResults({});
     setIsSubmitted(false);
